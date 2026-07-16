@@ -1,0 +1,17 @@
+services:
+  slushylove:
+    build: .
+    image: slushylove:latest
+    container_name: slushylove
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      - DATA_DIR=/app/data
+    volumes:
+      # Named volume so file permissions Just Work on TrueNAS/Portainer.
+      # Prefer a host path? Swap for e.g. "/mnt/pool/apps/slushylove:/app/data"
+      # and make sure that folder is writable by uid 1000.
+      - slushylove-data:/app/data
+
+volumes:
+  slushylove-data:
