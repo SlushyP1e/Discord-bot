@@ -5,7 +5,7 @@ export default {
   data: new SlashCommandBuilder()
     .setName('choose')
     .setDescription('Let SlushyLove decide for you 🎯')
-    .setContexts(InteractionContextType.Guild)
+    .setContexts(InteractionContextType.Guild, InteractionContextType.BotDM)
     .addStringOption((o) =>
       o.setName('options')
         .setDescription('Choices separated by commas, e.g. "pizza, sushi, tacos"')

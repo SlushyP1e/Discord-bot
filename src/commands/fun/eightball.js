@@ -14,7 +14,7 @@ export default {
   data: new SlashCommandBuilder()
     .setName('8ball')
     .setDescription('Ask the magic 8-ball a question 🎱')
-    .setContexts(InteractionContextType.Guild)
+    .setContexts(InteractionContextType.Guild, InteractionContextType.BotDM)
     .addStringOption((o) =>
       o.setName('question').setDescription('Your question').setRequired(true).setMaxLength(200),
     ),

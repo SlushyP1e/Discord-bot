@@ -5,7 +5,7 @@ export default {
   data: new SlashCommandBuilder()
     .setName('coinflip')
     .setDescription('Flip a coin 🪙')
-    .setContexts(InteractionContextType.Guild),
+    .setContexts(InteractionContextType.Guild, InteractionContextType.BotDM),
   async execute(interaction) {
     const heads = Math.random() < 0.5;
     await interaction.reply({

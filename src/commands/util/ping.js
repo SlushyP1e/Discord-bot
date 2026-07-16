@@ -5,7 +5,7 @@ export default {
   data: new SlashCommandBuilder()
     .setName('ping')
     .setDescription('Check if SlushyLove is awake 🏓')
-    .setContexts(InteractionContextType.Guild),
+    .setContexts(InteractionContextType.Guild, InteractionContextType.BotDM),
   async execute(interaction) {
     const sent = await interaction.reply({
       embeds: [simpleEmbed(COLORS.info, '🏓 Pinging...')],

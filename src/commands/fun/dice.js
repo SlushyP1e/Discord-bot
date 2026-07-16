@@ -5,7 +5,7 @@ export default {
   data: new SlashCommandBuilder()
     .setName('dice')
     .setDescription('Roll some dice 🎲')
-    .setContexts(InteractionContextType.Guild)
+    .setContexts(InteractionContextType.Guild, InteractionContextType.BotDM)
     .addIntegerOption((o) =>
       o.setName('sides').setDescription('Sides per die (default 6)').setMinValue(2).setMaxValue(1000),
     )

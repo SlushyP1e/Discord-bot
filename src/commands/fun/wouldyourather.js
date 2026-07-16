@@ -26,7 +26,7 @@ export default {
   data: new SlashCommandBuilder()
     .setName('wouldyourather')
     .setDescription('Get a "would you rather" question 🤔')
-    .setContexts(InteractionContextType.Guild),
+    .setContexts(InteractionContextType.Guild, InteractionContextType.BotDM),
   async execute(interaction) {
     const [a, b] = QUESTIONS[Math.floor(Math.random() * QUESTIONS.length)];
     await interaction.reply({

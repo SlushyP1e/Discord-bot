@@ -24,6 +24,8 @@ A lovable, Nekotina-style Discord bot packed with love & reaction commands, marr
 ### 🛠️ Utility
 `/help` (interactive category browser) `/ping` `/botinfo` (shows live GIF provider health) `/avatar` `/userinfo` `/serverinfo`
 
+> **DMs:** love, fun and most utility commands also work in direct messages with the bot. Marriage, `/userinfo` and `/serverinfo` are server-only since they need a server to make sense.
+
 ## 🛟 GIF failover
 
 GIFs come from five free, keyless APIs tried in order:

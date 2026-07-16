@@ -5,7 +5,7 @@ export default {
   data: new SlashCommandBuilder()
     .setName('avatar')
     .setDescription("Show someone's avatar in full size 🖼️")
-    .setContexts(InteractionContextType.Guild)
+    .setContexts(InteractionContextType.Guild, InteractionContextType.BotDM)
     .addUserOption((o) => o.setName('user').setDescription('Whose avatar (default: you)')),
   async execute(interaction) {
     const user = interaction.options.getUser('user') ?? interaction.user;

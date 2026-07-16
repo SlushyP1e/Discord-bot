@@ -13,7 +13,7 @@ export default {
   data: new SlashCommandBuilder()
     .setName('botinfo')
     .setDescription('Stats and GIF provider health for SlushyLove 🤖')
-    .setContexts(InteractionContextType.Guild),
+    .setContexts(InteractionContextType.Guild, InteractionContextType.BotDM),
   async execute(interaction, ctx) {
     const { client } = interaction;
     const providerLines = ctx.gifService

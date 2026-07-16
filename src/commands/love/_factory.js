@@ -2,11 +2,11 @@ import {
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
-  InteractionContextType,
   MessageFlags,
   SlashCommandBuilder,
 } from 'discord.js';
 import { COLORS, errorEmbed, loveEmbed, ordinal, simpleEmbed } from '../../utils/embeds.js';
+import { DM_AND_GUILD, scopeId } from '../../utils/scope.js';
 
 /** Registry of targeted actions so button handlers can look up their config. */
 export const LOVE_ACTIONS = new Map();
@@ -36,7 +36,7 @@ export function targeted(opts) {
   const data = new SlashCommandBuilder()
     .setName(opts.name)
     .setDescription(opts.description)
-    .setContexts(InteractionContextType.Guild)
+    .setContexts(DM_AND_GUILD)
     .addUserOption((o) =>
       o.setName('user').setDescription(`Who do you want to ${opts.name}?`).setRequired(true),
     );
@@ -54,7 +54,7 @@ export function targeted(opts) {
       }
 
       await interaction.deferReply();
-      const embed = await buildActionEmbed(ctx, opts, interaction.guildId, interaction.user, target);
+      const embed = await buildActionEmbed(ctx, opts, scopeId(interaction), interaction.user, target);
 
       const components = [];
       if (opts.backLabel) {
@@ -94,7 +94,7 @@ export async function handleLoveBack(interaction, ctx) {
   await interaction.message.edit({ components: [] }).catch(() => {});
 
   const originalUser = await interaction.client.users.fetch(originalUserId);
-  const embed = await buildActionEmbed(ctx, opts, interaction.guildId, interaction.user, originalUser);
+  const embed = await buildActionEmbed(ctx, opts, scopeId(interaction), interaction.user, originalUser);
   await interaction.editReply({ embeds: [embed] });
 }
 
@@ -103,7 +103,7 @@ export function mood(opts) {
   const data = new SlashCommandBuilder()
     .setName(opts.name)
     .setDescription(opts.description)
-    .setContexts(InteractionContextType.Guild);
+    .setContexts(DM_AND_GUILD);
 
   return {
     data,

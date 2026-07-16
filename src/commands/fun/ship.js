@@ -27,7 +27,7 @@ export default {
   data: new SlashCommandBuilder()
     .setName('ship')
     .setDescription('Check the love compatibility between two people 💘')
-    .setContexts(InteractionContextType.Guild)
+    .setContexts(InteractionContextType.Guild, InteractionContextType.BotDM)
     .addUserOption((o) => o.setName('user1').setDescription('First person').setRequired(true))
     .addUserOption((o) => o.setName('user2').setDescription('Second person (default: you)')),
   async execute(interaction, ctx) {

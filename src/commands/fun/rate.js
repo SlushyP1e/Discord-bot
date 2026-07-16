@@ -14,7 +14,7 @@ export default {
   data: new SlashCommandBuilder()
     .setName('rate')
     .setDescription('Have SlushyLove rate anything out of 10 ⭐')
-    .setContexts(InteractionContextType.Guild)
+    .setContexts(InteractionContextType.Guild, InteractionContextType.BotDM)
     .addStringOption((o) =>
       o.setName('thing').setDescription('What should I rate?').setRequired(true).setMaxLength(150),
     ),

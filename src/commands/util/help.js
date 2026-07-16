@@ -47,7 +47,7 @@ export default {
   data: new SlashCommandBuilder()
     .setName('help')
     .setDescription('Browse all SlushyLove commands 💖')
-    .setContexts(InteractionContextType.Guild),
+    .setContexts(InteractionContextType.Guild, InteractionContextType.BotDM),
   async execute(interaction) {
     await interaction.reply({ embeds: [overviewEmbed(interaction.client)], components: [menuRow()] });
   },
