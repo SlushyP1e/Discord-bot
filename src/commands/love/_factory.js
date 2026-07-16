@@ -11,7 +11,7 @@ import { DM_AND_GUILD, scopeId } from '../../utils/scope.js';
 /** Registry of targeted actions so button handlers can look up their config. */
 export const LOVE_ACTIONS = new Map();
 
-const BACK_WINDOW_MS = 2 * 60_000;
+const BACK_WINDOW_MS = 60 * 60_000; // 1 hour to press the "back!" button
 
 async function buildActionEmbed(ctx, opts, guildId, giver, receiver) {
   const gif = await ctx.gifService.getGif(opts.category);
@@ -86,7 +86,11 @@ export async function handleLoveBack(interaction, ctx) {
     });
   }
   if (Date.now() - interaction.message.createdTimestamp > BACK_WINDOW_MS) {
-    return interaction.update({ components: [] });
+    await interaction.message.edit({ components: [] }).catch(() => {});
+    return interaction.reply({
+      embeds: [errorEmbed('This button has expired — send a new one instead! ⏰')],
+      flags: MessageFlags.Ephemeral,
+    });
   }
 
   await interaction.deferReply();
