@@ -13,11 +13,34 @@ export const LOVE_ACTIONS = new Map();
 
 const BACK_WINDOW_MS = 60 * 60_000; // 1 hour to press the "back!" button
 
+// Landmark counts → celebratory flavor, in ascending order.
+const MILESTONES = [
+  [10, 'iconic'],
+  [25, 'a whole vibe'],
+  [50, 'certified besties'],
+  [100, 'true love'],
+  [250, 'unstoppable'],
+  [500, 'the stuff of legend'],
+  [1000, 'absolutely feral for each other'],
+];
+
+/**
+ * Celebratory line when a pair's count hits a landmark, else undefined.
+ * Exported for testing.
+ */
+export function milestoneLine(count, noun) {
+  const hit = MILESTONES.find(([n]) => n === count);
+  if (!hit) return undefined;
+  return `🎉 That's ${count} ${noun}s together — ${hit[1]}!`;
+}
+
 async function buildActionEmbed(ctx, opts, guildId, giver, receiver) {
   const gif = await ctx.gifService.getGif(opts.category);
   const count = ctx.db.interactions.increment(guildId, giver.id, receiver.id, opts.name);
   const footerParts = [`That's the ${ordinal(count)} ${opts.noun} from ${giver.displayName} to ${receiver.displayName}! 💌`];
   if (gif?.anime) footerParts.push(`From: ${gif.anime}`);
+  const milestone = milestoneLine(count, opts.noun);
+  if (milestone) footerParts.push(milestone);
   const embed = loveEmbed({
     description: `${opts.emoji} **${giver.displayName}** ${opts.verb} **${receiver.displayName}**!`,
     gifUrl: gif?.url,

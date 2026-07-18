@@ -9,6 +9,9 @@ export default {
     dance: 'dance', blush: 'blush', cry: 'cry', laugh: 'laugh', smile: 'smile',
     wink: 'wink', pout: 'pout', smug: 'smug', sleep: 'sleep', shrug: 'shrug',
     facepalm: 'facepalm',
+    // Newer reaction commands.
+    handshake: 'handshake', shoot: 'shoot', baka: 'baka', peek: 'peek',
+    happy: 'happy', yawn: 'yawn', thumbsup: 'thumbsup',
   },
   url: (cat) => `https://nekos.best/api/v2/${cat}?amount=1`,
   // nekos.best is the only provider that reports the source anime.

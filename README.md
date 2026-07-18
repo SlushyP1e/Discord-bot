@@ -4,10 +4,12 @@ A lovable, Nekotina-style Discord bot packed with love & reaction commands, marr
 
 ## ✨ Features
 
-### 💞 Love & reactions (31 commands)
-`/hug` `/kiss` `/cuddle` `/lick` `/pat` `/slap` `/poke` `/bite` `/tickle` `/feed` `/highfive` `/wave` `/handhold` `/nom` `/bonk` `/yeet` `/kick` `/punch` `/stare` `/boop` — plus solo moods: `/dance` `/blush` `/cry` `/laugh` `/smile` `/wink` `/pout` `/smug` `/sleep` `/shrug` `/facepalm`
+### 💞 Love & reactions (46 commands)
+`/hug` `/kiss` `/cuddle` `/lick` `/pat` `/slap` `/poke` `/bite` `/tickle` `/feed` `/highfive` `/wave` `/handhold` `/nom` `/bonk` `/yeet` `/kick` `/punch` `/stare` `/boop` `/airkiss` `/nuzzle` `/pinch` `/peek` `/handshake` `/baka` `/shoot` — plus `/grouphug` (hug/cuddle up to 5 people at once) and solo moods: `/dance` `/blush` `/cry` `/laugh` `/smile` `/wink` `/pout` `/smug` `/sleep` `/shrug` `/facepalm` `/happy` `/celebrate` `/clap` `/cheers` `/shy` `/nervous` `/yawn` `/thumbsup`
 
 - Every action posts an anime GIF and tracks a counter — *"That's the 12th hug from Slushy to Pie! 💌"*
+- Hit a landmark (10, 25, 50, 100…) and the bot throws a little **milestone celebration** 🎉
+- Anime source is shown when known (*"From: Clannad"*)
 - Most commands add a **"Hug back!" button** only the target can press 👀
 - Targeting yourself or the bot gets special (sassy) responses
 

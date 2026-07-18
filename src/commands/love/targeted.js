@@ -124,6 +124,48 @@ const ACTIONS = [
     self: 'You boop your own nose. Boop! 👃',
     bot: '*boop received* System tickled successfully! 🤖✨',
   },
+  {
+    name: 'airkiss', description: 'Blow someone a kiss 😗💨', category: 'airkiss',
+    emoji: '😗', verb: 'blows a kiss to', noun: 'air kiss', backLabel: 'Kiss back!',
+    self: 'You blow a kiss to your reflection. Lookin\' good! 😗',
+    bot: '*catches it* Aww, saved that one forever! 💾💞',
+  },
+  {
+    name: 'nuzzle', description: 'Nuzzle up to someone 🥰', category: 'nuzzle',
+    emoji: '🥰', verb: 'nuzzles', noun: 'nuzzle', backLabel: 'Nuzzle back!',
+    self: 'You nuzzle into your own shoulder. Comfy!',
+    bot: '*nuzzles back* Warning: cuteness overload detected! 🤖💕',
+  },
+  {
+    name: 'pinch', description: 'Pinch someone\'s cheek 🤏', category: 'pinch',
+    emoji: '🤏', verb: 'pinches', noun: 'pinch', backLabel: 'Pinch back!',
+    self: 'You pinch yourself. Yep, not dreaming.',
+    bot: 'Ow! My cheeks are made of chrome, you know! 🤖',
+  },
+  {
+    name: 'peek', description: 'Peek at someone 👀', category: 'peek',
+    emoji: '🫣', verb: 'peeks at', noun: 'peek', backLabel: 'Peek back!',
+    self: 'You peek around a corner. Coast is clear!',
+    bot: 'I see you peeking! 👀 No secrets from me!',
+  },
+  {
+    name: 'handshake', description: 'Shake someone\'s hand 🤝', category: 'handshake',
+    emoji: '🤝', verb: 'shakes hands with', noun: 'handshake', backLabel: 'Shake back!',
+    self: 'You shake your own hand. Deal with yourself: sealed.',
+    bot: '*firm robotic handshake* A pleasure doing business! 🤖🤝',
+  },
+  {
+    name: 'baka', description: 'Call someone a baka 😤', category: 'baka',
+    emoji: '😤', verb: 'calls', noun: 'baka', backLabel: 'B-baka!',
+    self: 'You call yourself a baka. Be nicer to yourself! 🥺',
+    bot: 'B-baka?! I\'m a very smart bot, thank you! 😤🤖',
+  },
+  {
+    name: 'shoot', description: 'Finger-guns at someone 🔫', category: 'shoot',
+    emoji: '🔫', verb: 'finger-guns at', noun: 'finger-gun', backLabel: 'Shoot back!',
+    self: 'You finger-gun at the mirror. Ayyy 😎🔫',
+    bot: 'Pew pew! *pretends to be hit* You got me! 🤖💥',
+  },
 ];
 
 export default ACTIONS.map(targeted);

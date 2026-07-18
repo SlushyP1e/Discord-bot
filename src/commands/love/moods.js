@@ -13,6 +13,14 @@ const MOODS = [
   { name: 'sleep', description: 'Zzz... 😴', category: 'sleep', emoji: '😴', verb: 'fell asleep... shhh!' },
   { name: 'shrug', description: '¯\\_(ツ)_/¯ 🤷', category: 'shrug', emoji: '🤷', verb: 'shrugs. ¯\\_(ツ)_/¯' },
   { name: 'facepalm', description: 'Facepalm at the chat 🤦', category: 'facepalm', emoji: '🤦', verb: 'facepalms.' },
+  { name: 'happy', description: 'Radiate happiness 😊', category: 'happy', emoji: '😊', verb: 'is so happy right now!' },
+  { name: 'celebrate', description: 'Celebrate something! 🎉', category: 'celebrate', emoji: '🎉', verb: 'is celebrating!' },
+  { name: 'clap', description: 'Give a round of applause 👏', category: 'clap', emoji: '👏', verb: 'is clapping!' },
+  { name: 'cheers', description: 'Cheers! 🥂', category: 'cheers', emoji: '🥂', verb: 'raises a glass. Cheers!' },
+  { name: 'shy', description: 'Feel a little shy 😳', category: 'shy', emoji: '😳', verb: 'is feeling shy...' },
+  { name: 'nervous', description: 'Get a little nervous 😰', category: 'nervous', emoji: '😰', verb: 'is looking nervous...' },
+  { name: 'yawn', description: 'Yawn... 🥱', category: 'yawn', emoji: '🥱', verb: 'lets out a big yawn.' },
+  { name: 'thumbsup', description: 'Give a thumbs up 👍', category: 'thumbsup', emoji: '👍', verb: 'gives a big thumbs up!' },
 ];
 
 export default MOODS.map(mood);

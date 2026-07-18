@@ -147,6 +147,9 @@ test('real provider maps cover every command category', () => {
     'hug', 'kiss', 'cuddle', 'lick', 'pat', 'slap', 'poke', 'bite', 'tickle', 'feed',
     'highfive', 'wave', 'handhold', 'nom', 'bonk', 'yeet', 'kick', 'punch', 'stare', 'boop',
     'dance', 'blush', 'cry', 'laugh', 'smile', 'wink', 'pout', 'smug', 'sleep', 'shrug', 'facepalm',
+    // Newer reaction commands.
+    'airkiss', 'nuzzle', 'pinch', 'peek', 'handshake', 'baka', 'shoot',
+    'happy', 'celebrate', 'clap', 'cheers', 'shy', 'nervous', 'yawn', 'thumbsup',
   ];
   for (const cat of categories) {
     assert.ok(service.supports(cat), `no provider supports category "${cat}"`);
