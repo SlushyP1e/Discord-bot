@@ -105,26 +105,29 @@ export async function handleLoveBack(interaction, ctx) {
   if (!opts) return;
 
   if (interaction.user.id !== targetId) {
+    // Leave the button intact for the real target.
     return interaction.reply({
       embeds: [errorEmbed(`Only <@${targetId}> can ${opts.name} back! 👀`)],
       flags: MessageFlags.Ephemeral,
     });
   }
+
+  // Acknowledge by removing the button from its own message. update() is
+  // authorized by the component interaction's token, so it reliably strips the
+  // button in both guild-install and user-install contexts (unlike a separate
+  // message.edit, which fails when the bot isn't a guild member).
+  await interaction.update({ components: [] });
+
   if (Date.now() - interaction.message.createdTimestamp > BACK_WINDOW_MS) {
-    await interaction.message.edit({ components: [] }).catch(() => {});
-    return interaction.reply({
+    return interaction.followUp({
       embeds: [errorEmbed('This button has expired — send a new one instead! ⏰')],
       flags: MessageFlags.Ephemeral,
     });
   }
 
-  await interaction.deferReply();
-  // Remove the button from the original message so it can only be used once.
-  await interaction.message.edit({ components: [] }).catch(() => {});
-
   const originalUser = await interaction.client.users.fetch(originalUserId);
   const embed = await buildActionEmbed(ctx, opts, scopeId(interaction), interaction.user, originalUser);
-  await interaction.editReply({ embeds: [embed] });
+  await interaction.followUp({ embeds: [embed] });
 }
 
 /** Creates a solo mood command like /dance. */
