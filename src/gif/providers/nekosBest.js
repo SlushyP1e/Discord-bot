@@ -11,5 +11,6 @@ export default {
     facepalm: 'facepalm',
   },
   url: (cat) => `https://nekos.best/api/v2/${cat}?amount=1`,
-  extract: (data) => data?.results?.[0]?.url,
+  // nekos.best is the only provider that reports the source anime.
+  extract: (data) => ({ url: data?.results?.[0]?.url, anime: data?.results?.[0]?.anime_name }),
 };

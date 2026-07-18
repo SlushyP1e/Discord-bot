@@ -53,13 +53,13 @@ export class GifService {
           headers: { accept: 'application/json', 'user-agent': 'SlushyLove Discord Bot' },
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const url = provider.extract(await res.json());
+        const { url, anime } = provider.extract(await res.json()) ?? {};
         if (typeof url !== 'string' || !url.startsWith('http')) throw new Error('no gif url in response');
 
         state.failures = 0;
         state.downUntil = 0;
-        this.#remember(category, url);
-        return { url, provider: provider.name };
+        this.#remember(category, { url, anime });
+        return { url, anime, provider: provider.name };
       } catch {
         state.failures += 1;
         if (state.failures >= this.failureThreshold) {
@@ -71,16 +71,17 @@ export class GifService {
 
     const cached = this.cache.get(category);
     if (cached?.length) {
-      return { url: cached[Math.floor(Math.random() * cached.length)], provider: 'cache' };
+      const pick = cached[Math.floor(Math.random() * cached.length)];
+      return { url: pick.url, anime: pick.anime, provider: 'cache' };
     }
     return null;
   }
 
-  #remember(category, url) {
+  #remember(category, entry) {
     let bucket = this.cache.get(category);
     if (!bucket) this.cache.set(category, (bucket = []));
-    if (bucket.includes(url)) return;
-    bucket.push(url);
+    if (bucket.some((e) => e.url === entry.url)) return;
+    bucket.push(entry);
     if (bucket.length > this.cacheSize) bucket.shift();
   }
 

@@ -10,5 +10,5 @@ export default {
     smug: 'smug',
   },
   url: (cat) => `https://api.waifu.pics/sfw/${cat}`,
-  extract: (data) => data?.url,
+  extract: (data) => ({ url: data?.url }),
 };

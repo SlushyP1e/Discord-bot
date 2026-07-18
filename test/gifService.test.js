@@ -7,12 +7,12 @@ function makeProvider(name, urls = {}) {
     name,
     map: { hug: 'hug' },
     url: (cat) => `https://${name}/api/${cat}`,
-    extract: (data) => data?.url,
+    extract: (data) => ({ url: data?.url, anime: data?.anime }),
   };
 }
 
-function okResponse(url) {
-  return { ok: true, json: async () => ({ url }) };
+function okResponse(url, anime) {
+  return { ok: true, json: async () => ({ url, anime }) };
 }
 
 test('returns a gif from the first (primary) provider', async () => {
@@ -24,7 +24,17 @@ test('returns a gif from the first (primary) provider', async () => {
     },
   });
   const result = await service.getGif('hug');
-  assert.deepEqual(result, { url: 'https://cdn/gif1.gif', provider: 'primary' });
+  assert.equal(result.url, 'https://cdn/gif1.gif');
+  assert.equal(result.provider, 'primary');
+});
+
+test('threads the source anime name through when a provider reports it', async () => {
+  const service = new GifService({
+    providers: [makeProvider('primary')],
+    fetchFn: async () => okResponse('https://cdn/gif.gif', 'Clannad'),
+  });
+  const result = await service.getGif('hug');
+  assert.equal(result.anime, 'Clannad');
 });
 
 test('falls back to the next provider when the first fails', async () => {
@@ -115,7 +125,8 @@ test('serves a cached gif when every provider is down', async () => {
 
   fail = true;
   const second = await service.getGif('hug');
-  assert.deepEqual(second, { url: 'https://cdn/cached.gif', provider: 'cache' });
+  assert.equal(second.url, 'https://cdn/cached.gif');
+  assert.equal(second.provider, 'cache');
 });
 
 test('returns null (never throws) when everything is down and cache is empty', async () => {

@@ -16,10 +16,12 @@ const BACK_WINDOW_MS = 60 * 60_000; // 1 hour to press the "back!" button
 async function buildActionEmbed(ctx, opts, guildId, giver, receiver) {
   const gif = await ctx.gifService.getGif(opts.category);
   const count = ctx.db.interactions.increment(guildId, giver.id, receiver.id, opts.name);
+  const footerParts = [`That's the ${ordinal(count)} ${opts.noun} from ${giver.displayName} to ${receiver.displayName}! 💌`];
+  if (gif?.anime) footerParts.push(`From: ${gif.anime}`);
   const embed = loveEmbed({
     description: `${opts.emoji} **${giver.displayName}** ${opts.verb} **${receiver.displayName}**!`,
     gifUrl: gif?.url,
-    footer: `That's the ${ordinal(count)} ${opts.noun} from ${giver.displayName} to ${receiver.displayName}! 💌`,
+    footer: footerParts.join(' • '),
   });
   if (!gif) {
     embed.setDescription(
@@ -117,6 +119,7 @@ export function mood(opts) {
       const embed = loveEmbed({
         description: `${opts.emoji} **${interaction.user.displayName}** ${opts.verb}`,
         gifUrl: gif?.url,
+        footer: gif?.anime ? `From: ${gif.anime}` : undefined,
       });
       await interaction.editReply({ embeds: [embed] });
     },

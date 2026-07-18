@@ -7,5 +7,5 @@ export default {
     smug: 'smug',
   },
   url: (cat) => `https://nekos.life/api/v2/img/${cat}`,
-  extract: (data) => data?.url,
+  extract: (data) => ({ url: data?.url }),
 };

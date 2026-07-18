@@ -11,5 +11,5 @@ export default {
     facepalm: 'facepalm',
   },
   url: (cat) => `https://api.otakugifs.xyz/gif?reaction=${cat}`,
-  extract: (data) => data?.url,
+  extract: (data) => ({ url: data?.url }),
 };

@@ -8,5 +8,5 @@ export default {
     dance: 'dance', blush: 'blush', cry: 'cry', pout: 'pout', smile: 'smile',
   },
   url: (cat) => `https://purrbot.site/api/img/sfw/${cat}/gif`,
-  extract: (data) => data?.link,
+  extract: (data) => ({ url: data?.link }),
 };
