@@ -3,6 +3,7 @@ import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { createInteractionsRepo } from './interactions.js';
 import { createMarriagesRepo } from './marriages.js';
+import { createBlocklistRepo } from './blocklist.js';
 
 const SCHEMA = `
 CREATE TABLE IF NOT EXISTS interactions (
@@ -23,6 +24,19 @@ CREATE TABLE IF NOT EXISTS marriages (
   PRIMARY KEY (guild_id, user_a, user_b)
 );
 CREATE INDEX IF NOT EXISTS idx_marriages_b ON marriages (guild_id, user_b);
+
+CREATE TABLE IF NOT EXISTS blocked_gifs (
+  url        TEXT PRIMARY KEY,
+  reason     TEXT,
+  blocked_by TEXT,
+  blocked_at INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS blocked_anime (
+  name       TEXT PRIMARY KEY,
+  blocked_by TEXT,
+  blocked_at INTEGER NOT NULL
+);
 `;
 
 export function createDatabase(path) {
@@ -34,6 +48,7 @@ export function createDatabase(path) {
     raw,
     interactions: createInteractionsRepo(raw),
     marriages: createMarriagesRepo(raw),
+    blocklist: createBlocklistRepo(raw),
     close: () => raw.close(),
   };
 }

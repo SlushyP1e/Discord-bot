@@ -129,6 +129,38 @@ test('serves a cached gif when every provider is down', async () => {
   assert.equal(second.provider, 'cache');
 });
 
+test('skips a blocked GIF url and fetches another from the same provider', async () => {
+  let call = 0;
+  const service = new GifService({
+    providers: [makeProvider('p')],
+    isBlockedUrl: (u) => u === 'https://cdn/bad.gif',
+    fetchFn: async () => okResponse(call++ === 0 ? 'https://cdn/bad.gif' : 'https://cdn/good.gif'),
+  });
+  const result = await service.getGif('hug');
+  assert.equal(result.url, 'https://cdn/good.gif');
+});
+
+test('skips GIFs whose source anime is blocked', async () => {
+  let call = 0;
+  const service = new GifService({
+    providers: [makeProvider('p')],
+    isBlockedAnime: (a) => a === 'BadShow',
+    fetchFn: async () =>
+      call++ === 0 ? okResponse('https://cdn/1.gif', 'BadShow') : okResponse('https://cdn/2.gif', 'GoodShow'),
+  });
+  const result = await service.getGif('hug');
+  assert.equal(result.anime, 'GoodShow');
+});
+
+test('returns null when every fetched GIF is blocked and nothing is cached', async () => {
+  const service = new GifService({
+    providers: [makeProvider('p')],
+    isBlockedUrl: () => true,
+    fetchFn: async () => okResponse('https://cdn/x.gif'),
+  });
+  assert.equal(await service.getGif('hug'), null);
+});
+
 test('returns null (never throws) when everything is down and cache is empty', async () => {
   const service = new GifService({
     providers: [makeProvider('a'), makeProvider('b')],

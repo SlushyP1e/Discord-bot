@@ -4,13 +4,24 @@ import { config } from '../config.js';
 export default {
   name: Events.ClientReady,
   once: true,
-  async execute(client) {
+  async execute(client, ctx) {
     console.log(`💖 Logged in as ${client.user.tag}`);
 
     client.user.setPresence({
       status: 'online',
       activities: [{ name: 'spreading love 💞 | /help', type: ActivityType.Playing }],
     });
+
+    // Resolve the bot owner (for GIF blocking) unless overridden via OWNER_ID.
+    if (!ctx.ownerId) {
+      try {
+        const app = await client.application.fetch();
+        ctx.ownerId = app.owner?.ownerId ?? app.owner?.id ?? null;
+      } catch (err) {
+        console.warn('⚠️  Could not resolve app owner:', err.message);
+      }
+    }
+    console.log(ctx.ownerId ? `🔒 GIF blocking allowed for owner ${ctx.ownerId}` : '⚠️  No owner resolved — GIF blocking disabled');
 
     // integration_types: 0 = guild install, 1 = user install.
     // contexts: 0 = guild, 1 = bot DM, 2 = private channel (group DM / user-app DM).

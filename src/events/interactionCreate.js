@@ -29,6 +29,9 @@ export default {
           });
         }
         await command.execute(interaction, ctx);
+      } else if (interaction.isMessageContextMenuCommand()) {
+        const command = interaction.client.commands.get(interaction.commandName);
+        if (command) await command.execute(interaction, ctx);
       } else if (interaction.isButton()) {
         const [scope] = interaction.customId.split(':');
         if (scope === 'love') await handleLoveBack(interaction, ctx);

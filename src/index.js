@@ -14,10 +14,16 @@ if (!config.token) {
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 client.commands = new Collection();
 
+const db = createDatabase(dbPath);
 const ctx = {
   client,
-  db: createDatabase(dbPath),
-  gifService: new GifService(),
+  db,
+  gifService: new GifService({
+    isBlockedUrl: (url) => db.blocklist.isBlockedUrl(url),
+    isBlockedAnime: (anime) => db.blocklist.isBlockedAnime(anime),
+  }),
+  // Resolved on ready to the Discord app owner (or config.ownerId override).
+  ownerId: config.ownerId,
 };
 
 // Load commands: each file in src/commands/<category>/ exports a command (or an

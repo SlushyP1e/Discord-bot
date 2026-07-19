@@ -46,3 +46,20 @@ test('marriage lifecycle: marry, lookup from both sides, divorce', () => {
   assert.ok(db.marriages.get('guild2', 'alice'), 'other guild marriage untouched');
   db.close();
 });
+
+test('blocklist blocks gifs (idempotent) and anime (case-insensitive)', () => {
+  const db = createDatabase(':memory:');
+
+  assert.equal(db.blocklist.isBlockedUrl('http://x/a.gif'), false);
+  assert.equal(db.blocklist.blockGif('http://x/a.gif', 'reported', 'owner'), true);
+  assert.equal(db.blocklist.blockGif('http://x/a.gif', 'reported', 'owner'), false);
+  assert.equal(db.blocklist.isBlockedUrl('http://x/a.gif'), true);
+
+  assert.equal(db.blocklist.isBlockedAnime('Bad Show'), false);
+  db.blocklist.blockAnime('Bad Show', 'owner');
+  assert.equal(db.blocklist.isBlockedAnime('bad show'), true);
+  assert.equal(db.blocklist.isBlockedAnime(undefined), false);
+
+  assert.deepEqual(db.blocklist.counts(), { gifs: 1, anime: 1 });
+  db.close();
+});

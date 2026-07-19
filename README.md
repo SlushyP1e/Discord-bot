@@ -41,6 +41,16 @@ GIFs come from five free, keyless APIs tried in order:
 
 Check provider health live with `/botinfo`.
 
+## 🚫 Blocking unwanted GIFs
+
+These are curated *SFW* anime GIF APIs, but they don't tag their content, so nothing can perfectly pre-screen every clip. Instead, **you** (the bot owner) can permanently remove any GIF from rotation:
+
+- **Block one GIF:** right-click the bot's message → **Apps → Block this GIF**. Its URL is blocklisted and never served again (the bot just fetches a different one).
+- **Block a whole anime:** `/blocklist anime name:<name>` — uses the source shown in the `Anime:` footer to block every GIF from that show.
+- **See what's blocked:** `/blocklist show`.
+
+Only the bot owner can do this. The owner is auto-detected as the Discord application's owner, or set `OWNER_ID` in `.env` to override. Blocks are stored in the SQLite database, so they persist across restarts.
+
 ## 🚀 Setup
 
 ### 1. Create the Discord application
