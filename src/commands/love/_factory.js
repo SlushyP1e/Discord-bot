@@ -24,6 +24,11 @@ const MILESTONES = [
   [1000, 'absolutely feral for each other'],
 ];
 
+/** Simple English pluralization: kiss → kisses, hug → hugs, high-five → high-fives. */
+export function pluralize(noun) {
+  return /(s|x|z|ch|sh)$/i.test(noun) ? `${noun}es` : `${noun}s`;
+}
+
 /**
  * Celebratory line when a pair's count hits a landmark, else undefined.
  * Exported for testing.
@@ -31,14 +36,14 @@ const MILESTONES = [
 export function milestoneLine(count, noun) {
   const hit = MILESTONES.find(([n]) => n === count);
   if (!hit) return undefined;
-  return `🎉 That's ${count} ${noun}s together — ${hit[1]}!`;
+  return `🎉 That's ${count} ${pluralize(noun)} together — ${hit[1]}!`;
 }
 
 async function buildActionEmbed(ctx, opts, guildId, giver, receiver) {
   const gif = await ctx.gifService.getGif(opts.category);
   const count = ctx.db.interactions.increment(guildId, giver.id, receiver.id, opts.name);
   const footerParts = [`That's the ${ordinal(count)} ${opts.noun} from ${giver.displayName} to ${receiver.displayName}! 💌`];
-  if (gif?.anime) footerParts.push(`From: ${gif.anime}`);
+  if (gif?.anime) footerParts.push(`Anime: ${gif.anime}`);
   const milestone = milestoneLine(count, opts.noun);
   if (milestone) footerParts.push(milestone);
   const embed = loveEmbed({

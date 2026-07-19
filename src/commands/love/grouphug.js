@@ -60,7 +60,7 @@ export default {
 
     const names = joinNames(targets.map((t) => `**${t.displayName}**`));
     const footerParts = [`${targets.length} ${targets.length === 1 ? 'person' : 'people'} hugged 💞`];
-    if (gif?.anime) footerParts.push(`From: ${gif.anime}`);
+    if (gif?.anime) footerParts.push(`Anime: ${gif.anime}`);
 
     const embed = loveEmbed({
       description: `${type.emoji} **${interaction.user.displayName}** ${type.verb} ${names} into ${type.into}!`,

@@ -38,7 +38,7 @@ export class GifService {
     return this.providers.some((p) => p.map[category]);
   }
 
-  /** @returns {Promise<{url: string, provider: string} | null>} never throws */
+  /** @returns {Promise<{url: string, anime?: string, provider: string} | null>} never throws */
   async getGif(category) {
     for (const provider of this.providers) {
       const mapped = provider.map[category];
