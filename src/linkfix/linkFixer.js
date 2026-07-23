@@ -11,7 +11,7 @@ const PLATFORMS = [
   {
     name: 'TikTok',
     match: (h) => h === 'tiktok.com' || h.endsWith('.tiktok.com'),
-    hosts: ['vxtiktok.com', 'tnktok.com', 'tiktxk.com'],
+    hosts: ['tnktok.com', 'tiktxk.com'],
   },
   {
     name: 'Instagram',

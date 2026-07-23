@@ -9,7 +9,7 @@ test('rewrites each platform to its primary fixer, keeping the path', () => {
   );
   assert.equal(
     buildFixedUrls('https://www.tiktok.com/@someone/video/98765').urls[0],
-    'https://vxtiktok.com/@someone/video/98765',
+    'https://tnktok.com/@someone/video/98765',
   );
   assert.equal(
     buildFixedUrls('https://www.instagram.com/reel/AbC123/').urls[0],
@@ -37,7 +37,7 @@ test('strips tracking query params and fragments', () => {
 });
 
 test('handles short links and subdomains', () => {
-  assert.equal(buildFixedUrls('https://vm.tiktok.com/ZMabc123/').urls[0], 'https://vxtiktok.com/ZMabc123/');
+  assert.equal(buildFixedUrls('https://vm.tiktok.com/ZMabc123/').urls[0], 'https://tnktok.com/ZMabc123/');
   assert.equal(buildFixedUrls('https://mobile.twitter.com/a/status/9').urls[0], 'https://fxtwitter.com/a/status/9');
 });
 
