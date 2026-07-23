@@ -23,6 +23,9 @@ A lovable, Nekotina-style Discord bot packed with love & reaction commands, marr
 ### 🎲 Fun & games
 `/8ball` `/coinflip` `/dice` `/rate` `/wouldyourather` `/choose`
 
+### 🔗 Link fixer
+`/fix <link>` — paste a TikTok, X/Twitter, Instagram, Reddit, Threads, Bluesky or Pixiv link and get back a version that actually plays inline in Discord. If the embed doesn't work, a **Try another fixer** button cycles to a backup service.
+
 ### 🛠️ Utility
 `/help` (interactive category browser) `/ping` `/botinfo` (shows live GIF provider health) `/avatar` `/userinfo` `/serverinfo`
 

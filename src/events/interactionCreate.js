@@ -5,6 +5,7 @@ import { handleLoveBack } from '../commands/love/_factory.js';
 import { handleMarriageButton } from '../commands/marriage/marry.js';
 import { handleDivorceButton } from '../commands/marriage/divorce.js';
 import { handleHelpMenu } from '../commands/util/help.js';
+import { handleFixButton } from '../commands/util/fix.js';
 
 async function replySafe(interaction, payload) {
   try {
@@ -37,6 +38,7 @@ export default {
         if (scope === 'love') await handleLoveBack(interaction, ctx);
         else if (scope === 'marry') await handleMarriageButton(interaction, ctx);
         else if (scope === 'divorce') await handleDivorceButton(interaction, ctx);
+        else if (scope === 'fix') await handleFixButton(interaction, ctx);
       } else if (interaction.isStringSelectMenu()) {
         if (interaction.customId === 'help:menu') await handleHelpMenu(interaction);
       }
