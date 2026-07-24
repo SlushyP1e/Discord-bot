@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { GifService } from '../src/gif/gifService.js';
+import { GifService, headValidate } from '../src/gif/gifService.js';
 
 function makeProvider(name, urls = {}) {
   return {
@@ -159,6 +159,62 @@ test('returns null when every fetched GIF is blocked and nothing is cached', asy
     fetchFn: async () => okResponse('https://cdn/x.gif'),
   });
   assert.equal(await service.getGif('hug'), null);
+});
+
+test('skips a dead-link GIF and returns a live one from the same provider', async () => {
+  let call = 0;
+  const service = new GifService({
+    providers: [makeProvider('p')],
+    validateUrl: async (u) => u === 'https://cdn/live.gif',
+    fetchFn: async () => okResponse(call++ === 0 ? 'https://cdn/dead.gif' : 'https://cdn/live.gif'),
+  });
+  const result = await service.getGif('hug');
+  assert.equal(result.url, 'https://cdn/live.gif');
+});
+
+test('returns null when every fetched GIF fails validation (caller shows the napping note)', async () => {
+  const service = new GifService({
+    providers: [makeProvider('a'), makeProvider('b')],
+    validateUrl: async () => false,
+    fetchFn: async () => okResponse('https://cdn/dead.gif'),
+  });
+  assert.equal(await service.getGif('hug'), null);
+});
+
+test('skips a dead cached GIF in the last-resort fallback', async () => {
+  let live = true;
+  const service = new GifService({
+    providers: [makeProvider('only')],
+    validateUrl: async (u) => (u === 'https://cdn/cached.gif' ? live : true),
+    fetchFn: (() => {
+      let n = 0;
+      return async () => {
+        if (n++ === 0) return okResponse('https://cdn/cached.gif'); // first call succeeds -> cached
+        throw new Error('provider down');
+      };
+    })(),
+  });
+
+  // Prime the cache with a (then-live) gif.
+  const first = await service.getGif('hug');
+  assert.equal(first.url, 'https://cdn/cached.gif');
+
+  // Now the provider is down and the cached gif has gone dead -> null, not blank.
+  live = false;
+  assert.equal(await service.getGif('hug'), null);
+});
+
+test('headValidate accepts live images and rejects dead/non-image links', async () => {
+  const res = (status, contentType) => ({
+    ok: status >= 200 && status < 300,
+    status,
+    headers: { get: () => contentType },
+  });
+  assert.equal(await headValidate('x', { fetchFn: async () => res(200, 'image/gif') }), true);
+  assert.equal(await headValidate('x', { fetchFn: async () => res(404, 'text/html') }), false);
+  assert.equal(await headValidate('x', { fetchFn: async () => res(405, null) }), true); // HEAD unsupported
+  assert.equal(await headValidate('x', { fetchFn: async () => res(200, 'text/html') }), false);
+  assert.equal(await headValidate('x', { fetchFn: async () => { throw new Error('boom'); } }), false);
 });
 
 test('returns null (never throws) when everything is down and cache is empty', async () => {

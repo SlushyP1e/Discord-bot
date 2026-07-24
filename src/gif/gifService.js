@@ -7,6 +7,34 @@ import nekosLife from './providers/nekosLife.js';
 export const defaultProviders = [nekosBest, waifuPics, otakuGifs, purrbot, nekosLife];
 
 /**
+ * Confirms a GIF URL actually points to a live image, so we never post a dead
+ * link (which Discord renders as a blank embed). Errs on the side of "usable":
+ * if HEAD isn't supported (405/501) or gives no content-type, we allow it.
+ * @returns {Promise<boolean>}
+ */
+/** Returns a shuffled copy of an array (Fisher–Yates). */
+function shuffle(arr) {
+  const out = [...arr];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
+export async function headValidate(url, { fetchFn = globalThis.fetch, timeoutMs = 4000 } = {}) {
+  try {
+    const res = await fetchFn(url, { method: 'HEAD', signal: AbortSignal.timeout(timeoutMs) });
+    if (res.status === 405 || res.status === 501) return true; // HEAD not allowed — can't disprove
+    if (!res.ok) return false;
+    const type = res.headers?.get?.('content-type') ?? '';
+    return type === '' || type.startsWith('image');
+  } catch {
+    return false;
+  }
+}
+
+/**
  * GIF fetcher with multi-provider failover.
  *
  * - Tries providers in priority order; each request has a hard timeout.
@@ -28,6 +56,9 @@ export class GifService {
     isBlockedUrl = () => false,
     isBlockedAnime = () => false,
     blockedRetries = 3,
+    // Optional async (url) => boolean liveness check. When set, GIFs that fail
+    // it are skipped like blocked ones, so a dead link never reaches Discord.
+    validateUrl = null,
   } = {}) {
     this.providers = providers;
     this.fetchFn = fetchFn;
@@ -38,6 +69,7 @@ export class GifService {
     this.isBlockedUrl = isBlockedUrl;
     this.isBlockedAnime = isBlockedAnime;
     this.blockedRetries = blockedRetries;
+    this.validateUrl = validateUrl;
     this.state = new Map(providers.map((p) => [p.name, { failures: 0, downUntil: 0 }]));
     this.cache = new Map();
   }
@@ -48,6 +80,12 @@ export class GifService {
 
   #isBlocked(entry) {
     return this.isBlockedUrl(entry.url) || this.isBlockedAnime(entry.anime);
+  }
+
+  async #isUsable(entry) {
+    if (this.#isBlocked(entry)) return false;
+    if (this.validateUrl && !(await this.validateUrl(entry.url))) return false;
+    return true;
   }
 
   /** @returns {Promise<{url: string, anime?: string, provider: string} | null>} never throws */
@@ -83,16 +121,17 @@ export class GifService {
 
         state.failures = 0;
         state.downUntil = 0;
-        if (this.#isBlocked(entry)) continue; // blocked — ask this provider again
+        // Skip blocked or dead-link GIFs — ask this provider again.
+        if (!(await this.#isUsable(entry))) continue;
         this.#remember(category, entry);
         return { url: entry.url, anime: entry.anime, provider: provider.name };
       }
     }
 
-    // Last resort: a cached GIF, skipping anything now blocked.
+    // Last resort: a cached GIF, skipping anything blocked or now dead.
     const cached = (this.cache.get(category) ?? []).filter((e) => !this.#isBlocked(e));
-    if (cached.length) {
-      const pick = cached[Math.floor(Math.random() * cached.length)];
+    for (const pick of shuffle(cached)) {
+      if (this.validateUrl && !(await this.validateUrl(pick.url))) continue;
       return { url: pick.url, anime: pick.anime, provider: 'cache' };
     }
     return null;

@@ -4,7 +4,7 @@ import { pathToFileURL } from 'node:url';
 import path from 'node:path';
 import { config, dbPath } from './config.js';
 import { createDatabase } from './db/database.js';
-import { GifService } from './gif/gifService.js';
+import { GifService, headValidate } from './gif/gifService.js';
 
 if (!config.token) {
   console.error('❌ DISCORD_TOKEN is not set. Copy .env.example to .env and add your bot token.');
@@ -21,6 +21,7 @@ const ctx = {
   gifService: new GifService({
     isBlockedUrl: (url) => db.blocklist.isBlockedUrl(url),
     isBlockedAnime: (anime) => db.blocklist.isBlockedAnime(anime),
+    validateUrl: (url) => headValidate(url),
   }),
   // Resolved on ready to the Discord app owner (or config.ownerId override).
   ownerId: config.ownerId,
