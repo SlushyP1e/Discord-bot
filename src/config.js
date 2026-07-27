@@ -1,8 +1,12 @@
 import path from 'node:path';
 
-/** Read a boolean-ish env var: 1/true/yes/on (any case) means true. */
+/**
+ * Read a boolean-ish env var: 1/true/yes/on (any case) means true.
+ * Surrounding quotes are tolerated — some ways of passing env vars keep the
+ * quotes from `KEY="true"` as part of the value.
+ */
 function bool(value) {
-  return /^(1|true|yes|on)$/i.test((value ?? '').trim());
+  return /^(1|true|yes|on)$/i.test((value ?? '').trim().replace(/^["']|["']$/g, ''));
 }
 
 /** Read a numeric env var, falling back when it's unset or not a number. */
@@ -47,6 +51,9 @@ export const config = {
     // the privileged Message Content intent, which has to be switched on in the
     // Developer Portal first — requesting it without that stops the bot booting.
     mentionChat: bool(process.env.AI_MENTION_CHAT),
+    // Log why a mention was ignored. Mention refusals are silent in Discord on
+    // purpose, which makes them impossible to debug without this.
+    debug: bool(process.env.AI_DEBUG),
   },
 };
 

@@ -59,12 +59,14 @@ const ctx = {
 
 if (aiSettings.hasApiKey()) {
   console.log(`🧠 AI ready: ${aiSettings.provider} · ${aiSettings.model} (${aiSettings.allowedGuilds().length} server(s) allowed)`);
-  console.log(config.ai.mentionChat
-    ? '💬 @mention and reply chat is ON (needs the Message Content intent)'
-    : '💬 @mention chat is off — /ask only. Set AI_MENTION_CHAT=true to enable it.');
 } else {
   console.log('🧠 AI not configured — the owner can run /aiconfig key to enable /ask');
 }
+// Always logged, so "why isn't it replying to mentions?" is answerable from the
+// first lines of the log instead of by guesswork.
+console.log(config.ai.mentionChat
+  ? '💬 @mention + reply chat: ON'
+  : `💬 @mention + reply chat: OFF (AI_MENTION_CHAT=${JSON.stringify(process.env.AI_MENTION_CHAT ?? '')}) — /ask still works`);
 if (!config.ai.secret) {
   console.warn('⚠️  CONFIG_SECRET is not set — the AI API key will be stored unencrypted in the database.');
 }
