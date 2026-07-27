@@ -1,5 +1,10 @@
 import path from 'node:path';
 
+/** Read a boolean-ish env var: 1/true/yes/on (any case) means true. */
+function bool(value) {
+  return /^(1|true|yes|on)$/i.test((value ?? '').trim());
+}
+
 /** Read a numeric env var, falling back when it's unset or not a number. */
 function num(value, fallback) {
   const n = Number(value);
@@ -38,6 +43,10 @@ export const config = {
     thinking: process.env.AI_THINKING?.trim() || 'auto',
     // How many past messages to resend as context on each /ask.
     memoryTurns: num(process.env.AI_MEMORY_TURNS, 8),
+    // Chat by @mention / reply as well as /ask. Off by default because it needs
+    // the privileged Message Content intent, which has to be switched on in the
+    // Developer Portal first — requesting it without that stops the bot booting.
+    mentionChat: bool(process.env.AI_MENTION_CHAT),
   },
 };
 

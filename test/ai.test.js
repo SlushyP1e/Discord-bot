@@ -5,6 +5,7 @@ import { AiSettings, checkAiAccess } from '../src/ai/settings.js';
 import { buildEndpoint, thinkingField } from '../src/ai/client.js';
 import { buildSystemPrompt, GUARDRAILS } from '../src/ai/persona.js';
 import { createConversationStore } from '../src/ai/context.js';
+import { isTalkingToBot, stripBotMention } from '../src/ai/mention.js';
 import { splitText } from '../src/utils/split.js';
 
 const DEFAULTS = {
@@ -144,6 +145,25 @@ test('conversation memory expires once a thread goes cold', () => {
   const store = createConversationStore({ ttlMs: -1 });
   store.push('chan', 'alice', 'user', 'hello?');
   assert.deepEqual(store.get('chan', 'alice'), []);
+});
+
+test('only direct mentions and replies start a chat', () => {
+  const base = { mentionedDirectly: false, repliesToBot: false, isDM: false, mentionsEveryone: false };
+  assert.equal(isTalkingToBot({ ...base, mentionedDirectly: true }), true);
+  assert.equal(isTalkingToBot({ ...base, repliesToBot: true }), true);
+  assert.equal(isTalkingToBot({ ...base, isDM: true }), true);
+  assert.equal(isTalkingToBot(base), false);
+  // An @everyone that happens to reach the bot must not cost an API call.
+  assert.equal(isTalkingToBot({ ...base, mentionedDirectly: true, mentionsEveryone: true }), false);
+});
+
+test('the bot mention is stripped, leaving the actual question', () => {
+  assert.equal(stripBotMention('<@123> frik u', '123'), 'frik u');
+  assert.equal(stripBotMention('<@!123> hey   there', '123'), 'hey there');
+  assert.equal(stripBotMention('hey <@123> what is tuna', '123'), 'hey what is tuna');
+  assert.equal(stripBotMention('<@123>', '123'), '', 'a bare ping leaves nothing to answer');
+  // Someone else's mention stays put, so the model sees who was meant.
+  assert.equal(stripBotMention('<@123> tell <@999> hi', '123'), 'tell <@999> hi');
 });
 
 test('long answers split on natural boundaries without losing text', () => {

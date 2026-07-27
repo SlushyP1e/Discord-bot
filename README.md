@@ -29,6 +29,7 @@ A lovable, Nekotina-style Discord bot packed with love & reaction commands, marr
 ### 🧠 AI chat
 `/ask <question>` — ask SlushyLove anything and get an actual answer, in her own voice: dry, quick and happy to snap back at you. Powered by **DeepSeek** by default (or any OpenAI-compatible provider).
 
+- Or just **@mention her / reply to her messages** and she answers in the channel like a normal conversation — same brain, same memory, same rules. Off by default: it needs a privileged intent, see [below](#-chatting-by-mention).
 - Remembers the last few messages of your conversation for ~15 minutes, so follow-ups work. `fresh: true` starts over, `private: true` keeps the answer to yourself.
 - Nothing anyone says to `/ask` is written to disk — that memory is in RAM only and vanishes on restart.
 - **Only the bot owner** can plug in an API key or choose which servers may use it (see below).
@@ -92,6 +93,19 @@ Until you allow a server, `/ask` works for **you only**. Everyone else gets a po
 
 **Other providers:** anything speaking the OpenAI `/chat/completions` dialect works — `/aiconfig key api_key:... base_url:https://api.openai.com/v1 model:gpt-4o-mini`.
 
+### 💬 Chatting by mention
+
+By default `/ask` is the only way in. To also let people talk to her by **@mentioning her or replying to her messages**:
+
+1. Developer Portal → your app → **Bot** → **Privileged Gateway Intents** → enable **Message Content Intent** → Save.
+2. Set `AI_MENTION_CHAT=true` in `.env` and restart.
+
+⚠️ Do step 1 first. Requesting that intent without it granted makes Discord refuse the connection outright and the bot won't start — the startup error tells you exactly this if it happens. (Once the bot is in 100+ servers, the intent needs Discord verification.)
+
+What triggers a reply: a direct @mention, or replying to one of her messages. In DMs everything does. What deliberately doesn't: `@everyone`/`@here` pings that happen to reach her, role mentions, other bots, and a bare ping with no words.
+
+The access rules are identical to `/ask` — allow-listed servers only, DMs owner-only — but a blocked mention is answered with **silence** rather than an error, since mentions are easy to fire off by accident and a bot that replies to every stray ping is worse than one that says nothing. The 8-second cooldown is shared with `/ask`, so nobody gets two budgets by switching between them, and she can never ping anyone in a reply no matter what the model writes.
+
 ### 💸 Keeping it cheap
 
 The defaults are already tuned for the cheapest sensible setup, and a few dollars of DeepSeek credit goes a very long way (roughly **tens of thousands of questions**, at July 2026 V4-Flash rates).
@@ -129,7 +143,7 @@ The built-in persona deliberately bans roleplay stage directions (`*blinks*`, `*
 
 ### 1. Create the Discord application
 1. Go to the [Discord Developer Portal](https://discord.com/developers/applications) → **New Application** → name it `SlushyLove`.
-2. **Bot** tab → **Reset Token** → copy it (this is your `DISCORD_TOKEN`). No privileged intents needed.
+2. **Bot** tab → **Reset Token** → copy it (this is your `DISCORD_TOKEN`). No privileged intents needed, unless you want [chat by @mention](#-chatting-by-mention).
 3. Invite it: **OAuth2 → URL Generator** → scopes `bot` + `applications.commands`, bot permissions **Send Messages**, **Embed Links**, **Read Message History** → open the generated URL.
 
 ### 2a. Run with Docker Compose (recommended)
@@ -168,6 +182,7 @@ npm start
 | `AI_PERSONA` | — | Extra personality notes (safety rules still apply). Also settable via `/aiconfig persona`. |
 | `AI_THINKING` | — | `auto` (default, off on DeepSeek) / `enabled` / `disabled` / `omit` |
 | `AI_MEMORY_TURNS` | — | Past messages resent as context. Default `8`. |
+| `AI_MENTION_CHAT` | — | `true` to also chat by @mention/reply. Needs the Message Content intent. |
 | `AI_TIMEOUT_MS` / `AI_TEMPERATURE` / `AI_MAX_TOKENS` | — | Request tuning. Defaults `30000` / `0.7` / `400`. |
 
 ## 🧪 Tests
