@@ -12,11 +12,15 @@ const CATEGORY_META = {
   marriage: { label: 'Marriage & shipping', emoji: '💍', blurb: 'Propose, marry, divorce, ship and check love stats.' },
   fun: { label: 'Fun & games', emoji: '🎲', blurb: '8-ball, coinflips, ratings and other silliness.' },
   util: { label: 'Utility', emoji: '🛠️', blurb: 'Info about the bot, users and the server.' },
+  ai: { label: 'AI chat', emoji: '🧠', blurb: 'Ask me anything — I answer with actual sass.' },
 };
 
 function overviewEmbed(client) {
   const counts = {};
-  for (const cmd of client.commands.values()) counts[cmd.category] = (counts[cmd.category] ?? 0) + 1;
+  for (const cmd of client.commands.values()) {
+    if (cmd.ownerOnly) continue;
+    counts[cmd.category] = (counts[cmd.category] ?? 0) + 1;
+  }
   const lines = Object.entries(CATEGORY_META)
     .map(([key, meta]) => `${meta.emoji} **${meta.label}** — ${meta.blurb} *(${counts[key] ?? 0} commands)*`)
     .join('\n\n');
@@ -58,7 +62,7 @@ export async function handleHelpMenu(interaction) {
   const category = interaction.values[0];
   const meta = CATEGORY_META[category];
   const commands = [...interaction.client.commands.values()]
-    .filter((c) => c.category === category)
+    .filter((c) => c.category === category && !c.ownerOnly)
     .map((c) => `**/${c.data.name}** — ${c.data.description}`)
     .sort();
 

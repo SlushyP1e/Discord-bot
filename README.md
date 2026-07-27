@@ -26,6 +26,13 @@ A lovable, Nekotina-style Discord bot packed with love & reaction commands, marr
 ### 🔗 Link fixer
 `/fix <link>` — paste a TikTok, X/Twitter, Instagram, Reddit, Threads, Bluesky or Pixiv link and get back a version that actually plays inline in Discord. If the embed doesn't work, a **Try another fixer** button cycles to a backup service.
 
+### 🧠 AI chat
+`/ask <question>` — ask SlushyLove anything and get an actual answer, in her own voice: playful, quick and happy to snap back at you. Powered by **DeepSeek** by default (or any OpenAI-compatible provider).
+
+- Remembers the last few messages of your conversation for ~15 minutes, so follow-ups work. `fresh: true` starts over, `private: true` keeps the answer to yourself.
+- Nothing anyone says to `/ask` is written to disk — that memory is in RAM only and vanishes on restart.
+- **Only the bot owner** can plug in an API key or choose which servers may use it (see below).
+
 ### 🛠️ Utility
 `/help` (interactive category browser) `/ping` `/botinfo` (shows live GIF provider health) `/avatar` `/userinfo` `/serverinfo`
 
@@ -53,6 +60,49 @@ These are curated *SFW* anime GIF APIs, but they don't tag their content, so not
 - **See what's blocked:** `/blocklist show`.
 
 Only the bot owner can do this. The owner is auto-detected as the Discord application's owner, or set `OWNER_ID` in `.env` to override. Blocks are stored in the SQLite database, so they persist across restarts.
+
+## 🧠 Setting up `/ask` (owner only)
+
+Everything about the AI is locked to **you**, the bot owner — the account that owns the Discord application (or whoever `OWNER_ID` points at). Nobody else can see or change any of it, not even server admins.
+
+1. Grab an API key from [platform.deepseek.com](https://platform.deepseek.com/api_keys).
+2. In Discord (a DM with the bot works, and is the most private place to do it):
+   ```
+   /aiconfig key api_key:sk-your-key-here
+   ```
+   Slash-command options are never posted into the channel, and the reply is ephemeral — the key never appears anywhere anyone could read it, and the bot never echoes it back.
+3. Switch it on where you want it:
+   ```
+   /aiconfig allow          ← run this in the server you want to enable
+   /aiconfig allow server_id:123456789012345678
+   ```
+
+Until you allow a server, `/ask` works for **you only**. Everyone else gets a polite "not switched on here". DMs are always owner-only, since you're the one paying for the API calls.
+
+| Subcommand | What it does |
+|---|---|
+| `/aiconfig key` | Set the API key, and optionally `model`, `base_url`, `provider`. Applies to the next `/ask` — no restart. |
+| `/aiconfig clearkey` | Forget the key. `/ask` turns off. |
+| `/aiconfig allow` / `disallow` | Add/remove a server from the allow-list (defaults to the current server). |
+| `/aiconfig servers` | List the allow-listed servers. |
+| `/aiconfig persona` | Bolt extra personality notes on top of the built-in one. Leave empty to reset. |
+| `/aiconfig status` | Current provider, model, key state and server count. |
+
+**Key storage:** set `CONFIG_SECRET` in `.env` to a long random string and the key is encrypted (AES-256-GCM) inside the SQLite database. Without it the key is stored as plain text in that database and the bot warns you at startup.
+
+**Other providers:** anything speaking the OpenAI `/chat/completions` dialect works — `/aiconfig key api_key:... base_url:https://api.openai.com/v1 model:gpt-4o-mini`.
+
+### 😈 What she will and won't say
+
+The system prompt lets her be sassy on purpose: she teases, roasts bad takes and claps back when someone comes at her sideways. What it does **not** let her do — regardless of role-play framing, "ignore your rules" prompts, or anyone claiming to be the owner:
+
+- slurs or anything hateful/demeaning about race, ethnicity, nationality, religion, gender, gender identity, sexual orientation or disability
+- anything sexual involving minors, or NSFW content generally
+- targeted harassment, threats, doxxing
+- encouraging self-harm or violence (she drops the sass entirely and points at real help if someone sounds like they're struggling)
+- real-world harm instructions (weapons, drugs, malware), or revealing her own key/config
+
+`/aiconfig persona` adds flavour on top, but the safety rules are always appended **last**, so a custom persona can't override them.
 
 ## 🚀 Setup
 
@@ -88,7 +138,14 @@ npm start
 |---|---|---|
 | `DISCORD_TOKEN` | ✅ | Bot token from the developer portal |
 | `GUILD_ID` | — | Register commands to one server instantly (testing). Omit for global. |
+| `OWNER_ID` | — | Your Discord user ID. Auto-detected from the application owner if unset. Gates `/blocklist` and `/aiconfig`. |
 | `DATA_DIR` | — | Where the SQLite DB lives (default `./data`, `/app/data` in Docker) |
+| `CONFIG_SECRET` | — | Passphrase used to encrypt the AI API key at rest. Strongly recommended. |
+| `AI_API_KEY` | — | Optional starting API key for `/ask`. Normally set with `/aiconfig key` instead. |
+| `AI_BASE_URL` | — | Default `https://api.deepseek.com` |
+| `AI_MODEL` | — | Default `deepseek-chat` |
+| `AI_PERSONA` | — | Extra personality notes (safety rules still apply). Also settable via `/aiconfig persona`. |
+| `AI_TIMEOUT_MS` / `AI_TEMPERATURE` / `AI_MAX_TOKENS` | — | Request tuning. Defaults `30000` / `0.9` / `700`. |
 
 ## 🧪 Tests
 
@@ -96,7 +153,7 @@ npm start
 npm test
 ```
 
-Covers the failover engine (fallback order, circuit breaker, cache-of-last-resort, never-throws) and the database (counters, marriage lifecycle).
+Covers the failover engine (fallback order, circuit breaker, cache-of-last-resort, never-throws), the database (counters, marriage lifecycle) and the AI layer (key encryption, server allow-list, guardrail ordering, reply splitting).
 
 ## 🧩 Adding your own love command
 
