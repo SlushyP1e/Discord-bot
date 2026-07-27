@@ -42,6 +42,14 @@ function unpackKey(stored, secret) {
   }
 }
 
+// DeepSeek retired these aliases on 2026-07-24; requests using them now fail.
+// Anything saved with an older build gets rewritten on startup so the bot
+// doesn't silently break.
+const RETIRED_MODELS = {
+  'deepseek-chat': 'deepseek-v4-flash',
+  'deepseek-reasoner': 'deepseek-v4-flash',
+};
+
 export class AiSettings {
   /**
    * @param {object} opts
@@ -52,6 +60,15 @@ export class AiSettings {
     this.repo = repo;
     this.defaults = defaults;
     this.secret = defaults.secret || null;
+    this.#migrateRetiredModel();
+  }
+
+  #migrateRetiredModel() {
+    const stored = this.repo.getSetting(KEYS.model);
+    const replacement = stored && RETIRED_MODELS[stored];
+    if (!replacement) return;
+    this.repo.setSetting(KEYS.model, replacement);
+    console.warn(`⚠️  Model "${stored}" has been retired by the provider — switched to "${replacement}".`);
   }
 
   #setting(key, fallback) {
@@ -70,6 +87,10 @@ export class AiSettings {
   /** Owner-set personality flavour, or null for the built-in persona only. */
   get persona() {
     return this.#setting(KEYS.persona, this.defaults.persona);
+  }
+  /** Env-only: how to handle DeepSeek's thinking mode. See config.ai.thinking. */
+  get thinking() {
+    return this.defaults.thinking ?? 'auto';
   }
 
   getApiKey() {

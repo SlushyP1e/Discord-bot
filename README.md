@@ -27,8 +27,9 @@ A lovable, Nekotina-style Discord bot packed with love & reaction commands, marr
 `/fix <link>` — paste a TikTok, X/Twitter, Instagram, Reddit, Threads, Bluesky or Pixiv link and get back a version that actually plays inline in Discord. If the embed doesn't work, a **Try another fixer** button cycles to a backup service.
 
 ### 🧠 AI chat
-`/ask <question>` — ask SlushyLove anything and get an actual answer, in her own voice: playful, quick and happy to snap back at you. Powered by **DeepSeek** by default (or any OpenAI-compatible provider).
+`/ask <question>` — ask SlushyLove anything and get an actual answer, in her own voice: dry, quick and happy to snap back at you. Powered by **DeepSeek** by default (or any OpenAI-compatible provider).
 
+- Or just **@mention her / reply to her messages** and she answers in the channel like a normal conversation — same brain, same memory, same rules. Off by default: it needs a privileged intent, see [below](#-chatting-by-mention).
 - Remembers the last few messages of your conversation for ~15 minutes, so follow-ups work. `fresh: true` starts over, `private: true` keeps the answer to yourself.
 - Nothing anyone says to `/ask` is written to disk — that memory is in RAM only and vanishes on restart.
 - **Only the bot owner** can plug in an API key or choose which servers may use it (see below).
@@ -68,7 +69,7 @@ Everything about the AI is locked to **you**, the bot owner — the account that
 1. Grab an API key from [platform.deepseek.com](https://platform.deepseek.com/api_keys).
 2. In Discord (a DM with the bot works, and is the most private place to do it):
    ```
-   /aiconfig key api_key:sk-your-key-here
+   /aiconfig key api_key:sk-your-key-here model:deepseek-v4-flash
    ```
    Slash-command options are never posted into the channel, and the reply is ephemeral — the key never appears anywhere anyone could read it, and the bot never echoes it back.
 3. Switch it on where you want it:
@@ -92,6 +93,32 @@ Until you allow a server, `/ask` works for **you only**. Everyone else gets a po
 
 **Other providers:** anything speaking the OpenAI `/chat/completions` dialect works — `/aiconfig key api_key:... base_url:https://api.openai.com/v1 model:gpt-4o-mini`.
 
+### 💬 Chatting by mention
+
+By default `/ask` is the only way in. To also let people talk to her by **@mentioning her or replying to her messages**:
+
+1. Developer Portal → your app → **Bot** → **Privileged Gateway Intents** → enable **Message Content Intent** → Save.
+2. Set `AI_MENTION_CHAT=true` in `.env` and restart.
+
+⚠️ Do step 1 first. Requesting that intent without it granted makes Discord refuse the connection outright and the bot won't start — the startup error tells you exactly this if it happens. (Once the bot is in 100+ servers, the intent needs Discord verification.)
+
+What triggers a reply: a direct @mention, or replying to one of her messages. In DMs everything does. What deliberately doesn't: `@everyone`/`@here` pings that happen to reach her, role mentions, other bots, and a bare ping with no words.
+
+The access rules are identical to `/ask` — allow-listed servers only, DMs owner-only — but a blocked mention is answered with **silence** rather than an error, since mentions are easy to fire off by accident and a bot that replies to every stray ping is worse than one that says nothing. The 8-second cooldown is shared with `/ask`, so nobody gets two budgets by switching between them, and she can never ping anyone in a reply no matter what the model writes.
+
+### 💸 Keeping it cheap
+
+The defaults are already tuned for the cheapest sensible setup, and a few dollars of DeepSeek credit goes a very long way (roughly **tens of thousands of questions**, at July 2026 V4-Flash rates).
+
+- **Model:** `deepseek-v4-flash`, the budget tier. `deepseek-v4-pro` is roughly 3× the price — only worth it if you actually want harder reasoning. ⚠️ The old `deepseek-chat` / `deepseek-reasoner` names were **retired on 2026-07-24**; if you saved one with an earlier build, the bot rewrites it to `deepseek-v4-flash` on startup and logs a warning.
+- **Thinking mode off.** V4 models think by default and those reasoning tokens bill as *output* — the expensive half. `AI_THINKING=auto` (the default) turns it off on DeepSeek and leaves other providers untouched. Set `AI_THINKING=enabled` if you'd rather have smarter, pricier, slower answers.
+- **Prompt caching is free money.** The system prompt is identical on every request and always sits first, so DeepSeek serves it as a cache hit — dramatically cheaper than a fresh read. Changing `/aiconfig persona` invalidates that until the new prompt warms up again.
+- **`AI_MAX_TOKENS=400`** caps the worst-case reply. Lower it to ~250 if you want her permanently terse.
+- **`AI_MEMORY_TURNS=8`** controls how much history is resent each time. Drop it to `4` (or `0` for no memory) to cut input tokens.
+- **Volume controls:** the server allow-list plus the 8-second per-user cooldown are your real spend limits. Keep `/ask` on servers you trust, and `/aiconfig disallow` is an instant off switch. `/aiconfig clearkey` is the kill switch.
+
+DeepSeek bills per token with no monthly minimum, so an idle bot costs nothing.
+
 ### 😈 What she will and won't say
 
 The system prompt lets her be sassy on purpose: she teases, roasts bad takes and claps back when someone comes at her sideways. What it does **not** let her do — regardless of role-play framing, "ignore your rules" prompts, or anyone claiming to be the owner:
@@ -104,11 +131,19 @@ The system prompt lets her be sassy on purpose: she teases, roasts bad takes and
 
 `/aiconfig persona` adds flavour on top, but the safety rules are always appended **last**, so a custom persona can't override them.
 
+### 🎭 Tuning her tone
+
+The built-in persona deliberately bans roleplay stage directions (`*blinks*`, `*twirls dramatically*`), kaomoji, "uwu", stretched words and more than one emoji per message — left to its own devices a model will drift into that within a few replies. If she still slips:
+
+- Lower `AI_TEMPERATURE` (`0.5` is noticeably more grounded; the default is `0.7`).
+- Add a nudge with `/aiconfig persona`, e.g. *"Be blunt and a bit sarcastic. No emoji at all."*
+- Her memory of the last ~15 minutes is fed back to her, so a few bad replies reinforce themselves. `/ask fresh:true` wipes that thread and starts clean.
+
 ## 🚀 Setup
 
 ### 1. Create the Discord application
 1. Go to the [Discord Developer Portal](https://discord.com/developers/applications) → **New Application** → name it `SlushyLove`.
-2. **Bot** tab → **Reset Token** → copy it (this is your `DISCORD_TOKEN`). No privileged intents needed.
+2. **Bot** tab → **Reset Token** → copy it (this is your `DISCORD_TOKEN`). No privileged intents needed, unless you want [chat by @mention](#-chatting-by-mention).
 3. Invite it: **OAuth2 → URL Generator** → scopes `bot` + `applications.commands`, bot permissions **Send Messages**, **Embed Links**, **Read Message History** → open the generated URL.
 
 ### 2a. Run with Docker Compose (recommended)
@@ -143,9 +178,12 @@ npm start
 | `CONFIG_SECRET` | — | Passphrase used to encrypt the AI API key at rest. Strongly recommended. |
 | `AI_API_KEY` | — | Optional starting API key for `/ask`. Normally set with `/aiconfig key` instead. |
 | `AI_BASE_URL` | — | Default `https://api.deepseek.com` |
-| `AI_MODEL` | — | Default `deepseek-chat` |
+| `AI_MODEL` | — | Default `deepseek-v4-flash` |
 | `AI_PERSONA` | — | Extra personality notes (safety rules still apply). Also settable via `/aiconfig persona`. |
-| `AI_TIMEOUT_MS` / `AI_TEMPERATURE` / `AI_MAX_TOKENS` | — | Request tuning. Defaults `30000` / `0.9` / `700`. |
+| `AI_THINKING` | — | `auto` (default, off on DeepSeek) / `enabled` / `disabled` / `omit` |
+| `AI_MEMORY_TURNS` | — | Past messages resent as context. Default `8`. |
+| `AI_MENTION_CHAT` | — | `true` to also chat by @mention/reply. Needs the Message Content intent. |
+| `AI_TIMEOUT_MS` / `AI_TEMPERATURE` / `AI_MAX_TOKENS` | — | Request tuning. Defaults `30000` / `0.7` / `400`. |
 
 ## 🧪 Tests
 

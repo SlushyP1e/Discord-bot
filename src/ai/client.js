@@ -34,13 +34,40 @@ export function buildEndpoint(baseUrl) {
 }
 
 /**
+ * Work out the `thinking` field for a request body, or null to leave it out.
+ *
+ * DeepSeek's V4 models think by default and bill those reasoning tokens as
+ * output — expensive and slow for a chat bot that should be firing off
+ * one-liners. So on DeepSeek we switch it off explicitly. It's a DeepSeek
+ * extension though, not part of the OpenAI spec, so other providers (which
+ * might reject an unknown field) never see it unless you ask for it by name.
+ *
+ * @param {string} endpoint
+ * @param {'auto'|'disabled'|'enabled'|'omit'} mode
+ */
+export function thinkingField(endpoint, mode = 'auto') {
+  if (mode === 'omit') return null;
+  if (mode === 'auto') {
+    let host;
+    try {
+      host = new URL(endpoint).hostname;
+    } catch {
+      return null;
+    }
+    return /(^|\.)deepseek\.com$/i.test(host) ? { type: 'disabled' } : null;
+  }
+  return { type: mode };
+}
+
+/**
  * @param {import('./settings.js').AiSettings} settings
- * @param {{timeoutMs?: number, temperature?: number, maxTokens?: number}} [defaults]
+ * @param {{timeoutMs?: number, temperature?: number, maxTokens?: number, thinking?: string}} [defaults]
  */
 export function createAiClient(settings, defaults = {}) {
   const timeoutMs = defaults.timeoutMs ?? 30_000;
   const temperature = defaults.temperature ?? 0.9;
-  const maxTokens = defaults.maxTokens ?? 700;
+  const maxTokens = defaults.maxTokens ?? 400;
+  const thinkingMode = defaults.thinking ?? 'auto';
 
   /**
    * @param {Array<{role: string, content: string}>} messages
@@ -50,13 +77,16 @@ export function createAiClient(settings, defaults = {}) {
     const apiKey = settings.getApiKey();
     if (!apiKey) throw new NoApiKeyError();
 
+    const endpoint = buildEndpoint(settings.baseUrl);
+    const thinking = thinkingField(endpoint, thinkingMode);
+
     // Bail out rather than leaving the interaction hanging on a slow provider.
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
 
     let res;
     try {
-      res = await fetch(buildEndpoint(settings.baseUrl), {
+      res = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -68,6 +98,7 @@ export function createAiClient(settings, defaults = {}) {
           temperature,
           max_tokens: maxTokens,
           stream: false,
+          ...(thinking ? { thinking } : {}),
         }),
         signal: controller.signal,
       });

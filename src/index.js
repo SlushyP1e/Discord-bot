@@ -1,4 +1,4 @@
-import { Client, Collection, GatewayIntentBits } from 'discord.js';
+import { Client, Collection, GatewayIntentBits, Partials } from 'discord.js';
 import { readdirSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import path from 'node:path';
@@ -14,7 +14,23 @@ if (!config.token) {
   process.exit(1);
 }
 
-const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+// Slash commands need nothing privileged. Chatting by @mention additionally
+// needs to *read* messages, which means the Message Content intent — privileged,
+// and Discord refuses the connection outright if it isn't enabled in the
+// Developer Portal, so it's only requested when the feature is switched on.
+const intents = [GatewayIntentBits.Guilds];
+const partials = [];
+if (config.ai.mentionChat) {
+  intents.push(
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent,
+    GatewayIntentBits.DirectMessages,
+  );
+  // Uncached DMs arrive as partials without these.
+  partials.push(Partials.Channel, Partials.Message);
+}
+
+const client = new Client({ intents, partials });
 client.commands = new Collection();
 
 const db = createDatabase(dbPath);
@@ -34,14 +50,18 @@ const ctx = {
     timeoutMs: config.ai.timeoutMs,
     temperature: config.ai.temperature,
     maxTokens: config.ai.maxTokens,
+    thinking: config.ai.thinking,
   }),
-  conversations: createConversationStore(),
+  conversations: createConversationStore({ maxTurns: config.ai.memoryTurns }),
   // Resolved on ready to the Discord app owner (or config.ownerId override).
   ownerId: config.ownerId,
 };
 
 if (aiSettings.hasApiKey()) {
   console.log(`🧠 AI ready: ${aiSettings.provider} · ${aiSettings.model} (${aiSettings.allowedGuilds().length} server(s) allowed)`);
+  console.log(config.ai.mentionChat
+    ? '💬 @mention and reply chat is ON (needs the Message Content intent)'
+    : '💬 @mention chat is off — /ask only. Set AI_MENTION_CHAT=true to enable it.');
 } else {
   console.log('🧠 AI not configured — the owner can run /aiconfig key to enable /ask');
 }
@@ -84,6 +104,17 @@ process.on('SIGTERM', () => shutdown('SIGTERM'));
 
 client.login(config.token).catch((err) => {
   console.error('❌ Failed to log in to Discord:', err.message);
-  console.error('   Double-check DISCORD_TOKEN in your .env file.');
+  // Discord slams the gateway shut (code 4014) when you ask for a privileged
+  // intent the application hasn't been granted — a confusing failure unless you
+  // know AI_MENTION_CHAT is what asked for it.
+  if (/disallowed intents/i.test(err.message) || err.code === 'DisallowedIntents') {
+    console.error(
+      '   AI_MENTION_CHAT is on, which needs the MESSAGE CONTENT intent.\n' +
+        '   Enable it at Developer Portal → your app → Bot → Privileged Gateway Intents,\n' +
+        '   or set AI_MENTION_CHAT=false to go back to slash commands only.',
+    );
+  } else {
+    console.error('   Double-check DISCORD_TOKEN in your .env file.');
+  }
   process.exit(1);
 });
