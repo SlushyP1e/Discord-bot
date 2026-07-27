@@ -24,7 +24,9 @@ export const config = {
     // Used to encrypt the API key at rest. Strongly recommended.
     secret: process.env.CONFIG_SECRET?.trim() || null,
     timeoutMs: num(process.env.AI_TIMEOUT_MS, 30_000),
-    temperature: num(process.env.AI_TEMPERATURE, 0.9),
+    // Kept fairly low on purpose: high temperature pushes replies toward
+    // theatrical roleplay rather than actually answering.
+    temperature: num(process.env.AI_TEMPERATURE, 0.7),
     // Output tokens are the pricey half of the bill, and chat replies should be
     // short anyway — this caps the worst case rather than the typical reply.
     maxTokens: num(process.env.AI_MAX_TOKENS, 400),

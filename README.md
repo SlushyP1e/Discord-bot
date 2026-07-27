@@ -27,7 +27,7 @@ A lovable, Nekotina-style Discord bot packed with love & reaction commands, marr
 `/fix <link>` — paste a TikTok, X/Twitter, Instagram, Reddit, Threads, Bluesky or Pixiv link and get back a version that actually plays inline in Discord. If the embed doesn't work, a **Try another fixer** button cycles to a backup service.
 
 ### 🧠 AI chat
-`/ask <question>` — ask SlushyLove anything and get an actual answer, in her own voice: playful, quick and happy to snap back at you. Powered by **DeepSeek** by default (or any OpenAI-compatible provider).
+`/ask <question>` — ask SlushyLove anything and get an actual answer, in her own voice: dry, quick and happy to snap back at you. Powered by **DeepSeek** by default (or any OpenAI-compatible provider).
 
 - Remembers the last few messages of your conversation for ~15 minutes, so follow-ups work. `fresh: true` starts over, `private: true` keeps the answer to yourself.
 - Nothing anyone says to `/ask` is written to disk — that memory is in RAM only and vanishes on restart.
@@ -117,6 +117,14 @@ The system prompt lets her be sassy on purpose: she teases, roasts bad takes and
 
 `/aiconfig persona` adds flavour on top, but the safety rules are always appended **last**, so a custom persona can't override them.
 
+### 🎭 Tuning her tone
+
+The built-in persona deliberately bans roleplay stage directions (`*blinks*`, `*twirls dramatically*`), kaomoji, "uwu", stretched words and more than one emoji per message — left to its own devices a model will drift into that within a few replies. If she still slips:
+
+- Lower `AI_TEMPERATURE` (`0.5` is noticeably more grounded; the default is `0.7`).
+- Add a nudge with `/aiconfig persona`, e.g. *"Be blunt and a bit sarcastic. No emoji at all."*
+- Her memory of the last ~15 minutes is fed back to her, so a few bad replies reinforce themselves. `/ask fresh:true` wipes that thread and starts clean.
+
 ## 🚀 Setup
 
 ### 1. Create the Discord application
@@ -160,7 +168,7 @@ npm start
 | `AI_PERSONA` | — | Extra personality notes (safety rules still apply). Also settable via `/aiconfig persona`. |
 | `AI_THINKING` | — | `auto` (default, off on DeepSeek) / `enabled` / `disabled` / `omit` |
 | `AI_MEMORY_TURNS` | — | Past messages resent as context. Default `8`. |
-| `AI_TIMEOUT_MS` / `AI_TEMPERATURE` / `AI_MAX_TOKENS` | — | Request tuning. Defaults `30000` / `0.9` / `400`. |
+| `AI_TIMEOUT_MS` / `AI_TEMPERATURE` / `AI_MAX_TOKENS` | — | Request tuning. Defaults `30000` / `0.7` / `400`. |
 
 ## 🧪 Tests
 
