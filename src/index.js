@@ -34,8 +34,9 @@ const ctx = {
     timeoutMs: config.ai.timeoutMs,
     temperature: config.ai.temperature,
     maxTokens: config.ai.maxTokens,
+    thinking: config.ai.thinking,
   }),
-  conversations: createConversationStore(),
+  conversations: createConversationStore({ maxTurns: config.ai.memoryTurns }),
   // Resolved on ready to the Discord app owner (or config.ownerId override).
   ownerId: config.ownerId,
 };

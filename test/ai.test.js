@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createDatabase } from '../src/db/database.js';
 import { AiSettings, checkAiAccess } from '../src/ai/settings.js';
-import { buildEndpoint } from '../src/ai/client.js';
+import { buildEndpoint, thinkingField } from '../src/ai/client.js';
 import { buildSystemPrompt, GUARDRAILS } from '../src/ai/persona.js';
 import { createConversationStore } from '../src/ai/context.js';
 import { splitText } from '../src/utils/split.js';
@@ -10,10 +10,11 @@ import { splitText } from '../src/utils/split.js';
 const DEFAULTS = {
   provider: 'deepseek',
   baseUrl: 'https://api.deepseek.com',
-  model: 'deepseek-chat',
+  model: 'deepseek-v4-flash',
   apiKey: null,
   persona: null,
   secret: null,
+  thinking: 'auto',
 };
 
 function makeSettings(overrides = {}) {
@@ -31,9 +32,23 @@ test('buildEndpoint normalises provider base URLs', () => {
   );
 });
 
+test('thinking mode is switched off on DeepSeek and left alone elsewhere', () => {
+  // On by default at DeepSeek, and reasoning tokens bill as output — so off.
+  assert.deepEqual(thinkingField('https://api.deepseek.com/chat/completions'), { type: 'disabled' });
+  // Not an OpenAI-spec field: never sent to providers that might reject it.
+  assert.equal(thinkingField('https://api.openai.com/v1/chat/completions'), null);
+  assert.equal(thinkingField('https://openrouter.ai/api/v1/chat/completions'), null);
+  // A lookalike host must not match.
+  assert.equal(thinkingField('https://api.deepseek.com.evil.test/chat/completions'), null);
+  assert.equal(thinkingField('not a url'), null);
+  // Explicit modes win everywhere.
+  assert.deepEqual(thinkingField('https://api.openai.com/v1', 'enabled'), { type: 'enabled' });
+  assert.equal(thinkingField('https://api.deepseek.com', 'omit'), null);
+});
+
 test('settings fall back to env defaults until the owner overrides them', () => {
   const { db, settings } = makeSettings({ apiKey: 'env-key' });
-  assert.equal(settings.model, 'deepseek-chat');
+  assert.equal(settings.model, 'deepseek-v4-flash');
   assert.equal(settings.getApiKey(), 'env-key');
 
   settings.setProvider({ apiKey: 'sk-live', model: 'deepseek-reasoner', baseUrl: 'https://api.openai.com/v1/' });
@@ -45,6 +60,20 @@ test('settings fall back to env defaults until the owner overrides them', () => 
   // Clearing the stored key drops back to the environment one.
   settings.clearApiKey();
   assert.equal(settings.getApiKey(), 'env-key');
+  db.close();
+});
+
+test('a retired model saved by an older build is migrated on startup', () => {
+  const db = createDatabase(':memory:');
+  db.ai.setSetting('model', 'deepseek-chat'); // retired 2026-07-24
+
+  const settings = new AiSettings({ repo: db.ai, defaults: DEFAULTS });
+  assert.equal(settings.model, 'deepseek-v4-flash');
+  assert.equal(db.ai.getSetting('model'), 'deepseek-v4-flash', 'the fix must be persisted');
+
+  // A model the owner picked deliberately is left alone.
+  db.ai.setSetting('model', 'deepseek-v4-pro');
+  assert.equal(new AiSettings({ repo: db.ai, defaults: DEFAULTS }).model, 'deepseek-v4-pro');
   db.close();
 });
 

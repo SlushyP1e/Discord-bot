@@ -68,7 +68,7 @@ Everything about the AI is locked to **you**, the bot owner — the account that
 1. Grab an API key from [platform.deepseek.com](https://platform.deepseek.com/api_keys).
 2. In Discord (a DM with the bot works, and is the most private place to do it):
    ```
-   /aiconfig key api_key:sk-your-key-here
+   /aiconfig key api_key:sk-your-key-here model:deepseek-v4-flash
    ```
    Slash-command options are never posted into the channel, and the reply is ephemeral — the key never appears anywhere anyone could read it, and the bot never echoes it back.
 3. Switch it on where you want it:
@@ -91,6 +91,19 @@ Until you allow a server, `/ask` works for **you only**. Everyone else gets a po
 **Key storage:** set `CONFIG_SECRET` in `.env` to a long random string and the key is encrypted (AES-256-GCM) inside the SQLite database. Without it the key is stored as plain text in that database and the bot warns you at startup.
 
 **Other providers:** anything speaking the OpenAI `/chat/completions` dialect works — `/aiconfig key api_key:... base_url:https://api.openai.com/v1 model:gpt-4o-mini`.
+
+### 💸 Keeping it cheap
+
+The defaults are already tuned for the cheapest sensible setup, and a few dollars of DeepSeek credit goes a very long way (roughly **tens of thousands of questions**, at July 2026 V4-Flash rates).
+
+- **Model:** `deepseek-v4-flash`, the budget tier. `deepseek-v4-pro` is roughly 3× the price — only worth it if you actually want harder reasoning. ⚠️ The old `deepseek-chat` / `deepseek-reasoner` names were **retired on 2026-07-24**; if you saved one with an earlier build, the bot rewrites it to `deepseek-v4-flash` on startup and logs a warning.
+- **Thinking mode off.** V4 models think by default and those reasoning tokens bill as *output* — the expensive half. `AI_THINKING=auto` (the default) turns it off on DeepSeek and leaves other providers untouched. Set `AI_THINKING=enabled` if you'd rather have smarter, pricier, slower answers.
+- **Prompt caching is free money.** The system prompt is identical on every request and always sits first, so DeepSeek serves it as a cache hit — dramatically cheaper than a fresh read. Changing `/aiconfig persona` invalidates that until the new prompt warms up again.
+- **`AI_MAX_TOKENS=400`** caps the worst-case reply. Lower it to ~250 if you want her permanently terse.
+- **`AI_MEMORY_TURNS=8`** controls how much history is resent each time. Drop it to `4` (or `0` for no memory) to cut input tokens.
+- **Volume controls:** the server allow-list plus the 8-second per-user cooldown are your real spend limits. Keep `/ask` on servers you trust, and `/aiconfig disallow` is an instant off switch. `/aiconfig clearkey` is the kill switch.
+
+DeepSeek bills per token with no monthly minimum, so an idle bot costs nothing.
 
 ### 😈 What she will and won't say
 
@@ -143,9 +156,11 @@ npm start
 | `CONFIG_SECRET` | — | Passphrase used to encrypt the AI API key at rest. Strongly recommended. |
 | `AI_API_KEY` | — | Optional starting API key for `/ask`. Normally set with `/aiconfig key` instead. |
 | `AI_BASE_URL` | — | Default `https://api.deepseek.com` |
-| `AI_MODEL` | — | Default `deepseek-chat` |
+| `AI_MODEL` | — | Default `deepseek-v4-flash` |
 | `AI_PERSONA` | — | Extra personality notes (safety rules still apply). Also settable via `/aiconfig persona`. |
-| `AI_TIMEOUT_MS` / `AI_TEMPERATURE` / `AI_MAX_TOKENS` | — | Request tuning. Defaults `30000` / `0.9` / `700`. |
+| `AI_THINKING` | — | `auto` (default, off on DeepSeek) / `enabled` / `disabled` / `omit` |
+| `AI_MEMORY_TURNS` | — | Past messages resent as context. Default `8`. |
+| `AI_TIMEOUT_MS` / `AI_TEMPERATURE` / `AI_MAX_TOKENS` | — | Request tuning. Defaults `30000` / `0.9` / `400`. |
 
 ## 🧪 Tests
 

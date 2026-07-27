@@ -18,14 +18,24 @@ export const config = {
   ai: {
     provider: process.env.AI_PROVIDER || 'deepseek',
     baseUrl: process.env.AI_BASE_URL || 'https://api.deepseek.com',
-    model: process.env.AI_MODEL || 'deepseek-chat',
+    model: process.env.AI_MODEL || 'deepseek-v4-flash',
     apiKey: process.env.AI_API_KEY?.trim() || null,
     persona: process.env.AI_PERSONA?.trim() || null,
     // Used to encrypt the API key at rest. Strongly recommended.
     secret: process.env.CONFIG_SECRET?.trim() || null,
     timeoutMs: num(process.env.AI_TIMEOUT_MS, 30_000),
     temperature: num(process.env.AI_TEMPERATURE, 0.9),
-    maxTokens: num(process.env.AI_MAX_TOKENS, 700),
+    // Output tokens are the pricey half of the bill, and chat replies should be
+    // short anyway — this caps the worst case rather than the typical reply.
+    maxTokens: num(process.env.AI_MAX_TOKENS, 400),
+    // 'auto'     — turn DeepSeek's thinking mode OFF (it's on by default, and
+    //              reasoning tokens bill as output). Other providers get no
+    //              thinking field at all, since it isn't part of the OpenAI spec.
+    // 'disabled' / 'enabled' — force it either way on any provider.
+    // 'omit'     — never send the field.
+    thinking: process.env.AI_THINKING?.trim() || 'auto',
+    // How many past messages to resend as context on each /ask.
+    memoryTurns: num(process.env.AI_MEMORY_TURNS, 8),
   },
 };
 
