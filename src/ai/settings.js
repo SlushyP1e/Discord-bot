@@ -1,0 +1,147 @@
+// Live AI settings.
+//
+// Two layers: environment defaults (from config.ai) with anything the owner has
+// saved via /aiconfig layered on top. Everything reads through this object on
+// each call, so /aiconfig takes effect immediately — no restart needed.
+
+import { encryptString, decryptString } from './secret.js';
+
+const KEYS = {
+  apiKey: 'api_key',
+  baseUrl: 'base_url',
+  model: 'model',
+  provider: 'provider',
+  persona: 'persona',
+};
+
+/** Wrap a raw key for storage, encrypting it when a CONFIG_SECRET is available. */
+function packKey(apiKey, secret) {
+  if (secret) return JSON.stringify({ enc: true, envelope: encryptString(apiKey, secret) });
+  return JSON.stringify({ enc: false, value: apiKey });
+}
+
+/** Reverse of packKey(). Returns null when the value can't be recovered. */
+function unpackKey(stored, secret) {
+  let parsed;
+  try {
+    parsed = JSON.parse(stored);
+  } catch {
+    // Written by an older build (or edited by hand) as a bare string.
+    return stored.trim() || null;
+  }
+  if (!parsed?.enc) return parsed?.value?.trim() || null;
+  if (!secret) {
+    console.warn('⚠️  The saved AI key is encrypted but CONFIG_SECRET is not set — cannot use it.');
+    return null;
+  }
+  try {
+    return decryptString(parsed.envelope, secret);
+  } catch (err) {
+    console.error('❌ Could not decrypt the saved AI key (wrong CONFIG_SECRET?):', err.message);
+    return null;
+  }
+}
+
+export class AiSettings {
+  /**
+   * @param {object} opts
+   * @param {ReturnType<import('../db/ai.js').createAiRepo>} opts.repo
+   * @param {object} opts.defaults  config.ai — env-provided fallbacks.
+   */
+  constructor({ repo, defaults }) {
+    this.repo = repo;
+    this.defaults = defaults;
+    this.secret = defaults.secret || null;
+  }
+
+  #setting(key, fallback) {
+    return this.repo.getSetting(key) ?? fallback;
+  }
+
+  get provider() {
+    return this.#setting(KEYS.provider, this.defaults.provider);
+  }
+  get baseUrl() {
+    return this.#setting(KEYS.baseUrl, this.defaults.baseUrl);
+  }
+  get model() {
+    return this.#setting(KEYS.model, this.defaults.model);
+  }
+  /** Owner-set personality flavour, or null for the built-in persona only. */
+  get persona() {
+    return this.#setting(KEYS.persona, this.defaults.persona);
+  }
+
+  getApiKey() {
+    const stored = this.repo.getSetting(KEYS.apiKey);
+    if (stored) return unpackKey(stored, this.secret);
+    return this.defaults.apiKey || null;
+  }
+
+  hasApiKey() {
+    return Boolean(this.getApiKey());
+  }
+
+  /** True when the key currently in use is encrypted at rest. */
+  get keyEncrypted() {
+    return Boolean(this.secret) && Boolean(this.repo.getSetting(KEYS.apiKey));
+  }
+
+  /** Only defined, non-empty fields are changed. */
+  setProvider({ apiKey, baseUrl, model, provider } = {}) {
+    if (apiKey) this.repo.setSetting(KEYS.apiKey, packKey(apiKey.trim(), this.secret));
+    if (baseUrl) this.repo.setSetting(KEYS.baseUrl, baseUrl.trim().replace(/\/+$/, ''));
+    if (model) this.repo.setSetting(KEYS.model, model.trim());
+    if (provider) this.repo.setSetting(KEYS.provider, provider.trim());
+  }
+
+  /** Forget the stored key. Falls back to AI_API_KEY from the environment, if any. */
+  clearApiKey() {
+    this.repo.setSetting(KEYS.apiKey, null);
+  }
+
+  /** Pass null/empty to fall back to the built-in persona. */
+  setPersona(text) {
+    this.repo.setSetting(KEYS.persona, text?.trim() || null);
+  }
+
+  // ── Server allow-list ──────────────────────────────────────────────────────
+  allowGuild(guildId, addedBy) {
+    return this.repo.allowGuild(guildId, addedBy);
+  }
+  disallowGuild(guildId) {
+    return this.repo.disallowGuild(guildId);
+  }
+  isGuildAllowed(guildId) {
+    return this.repo.isGuildAllowed(guildId);
+  }
+  allowedGuilds() {
+    return this.repo.listGuilds().map((row) => row.guild_id);
+  }
+}
+
+/**
+ * Decide whether an interaction may use the AI.
+ *
+ * The owner can always use it (that's how they enable it somewhere in the first
+ * place). Everyone else needs to be in a server the owner has allow-listed —
+ * an empty allow-list means the AI is off for everyone but the owner. DMs are
+ * owner-only because the owner is the one paying for the API calls.
+ *
+ * @returns {{ok: true} | {ok: false, reason: string}}
+ */
+export function checkAiAccess({ isOwner, guildId, settings }) {
+  if (isOwner) return { ok: true };
+  if (!guildId) {
+    return { ok: false, reason: 'My AI brain only works inside servers — try `/ask` there instead! 💭' };
+  }
+  if (!settings.isGuildAllowed(guildId)) {
+    return {
+      ok: false,
+      reason:
+        "My AI brain isn't switched on in this server 💤\n" +
+        'Only my owner can enable it here, with `/aiconfig allow`.',
+    };
+  }
+  return { ok: true };
+}

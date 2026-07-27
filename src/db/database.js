@@ -4,6 +4,7 @@ import { dirname } from 'node:path';
 import { createInteractionsRepo } from './interactions.js';
 import { createMarriagesRepo } from './marriages.js';
 import { createBlocklistRepo } from './blocklist.js';
+import { createAiRepo } from './ai.js';
 
 const SCHEMA = `
 CREATE TABLE IF NOT EXISTS interactions (
@@ -37,6 +38,18 @@ CREATE TABLE IF NOT EXISTS blocked_anime (
   blocked_by TEXT,
   blocked_at INTEGER NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS ai_settings (
+  key        TEXT PRIMARY KEY,
+  value      TEXT,
+  updated_at INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS ai_guilds (
+  guild_id TEXT PRIMARY KEY,
+  added_by TEXT,
+  added_at INTEGER NOT NULL
+);
 `;
 
 export function createDatabase(path) {
@@ -49,6 +62,7 @@ export function createDatabase(path) {
     interactions: createInteractionsRepo(raw),
     marriages: createMarriagesRepo(raw),
     blocklist: createBlocklistRepo(raw),
+    ai: createAiRepo(raw),
     close: () => raw.close(),
   };
 }
