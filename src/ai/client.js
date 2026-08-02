@@ -4,6 +4,8 @@
 // The base URL, model and key are read from AiSettings on every call, so
 // /aiconfig changes apply to the very next /ask with no restart.
 
+import { normalizeUsage } from './usage.js';
+
 /** No API key configured yet — the owner still needs to run /aiconfig key. */
 export class NoApiKeyError extends Error {
   constructor() {
@@ -71,7 +73,8 @@ export function createAiClient(settings, defaults = {}) {
 
   /**
    * @param {Array<{role: string, content: string}>} messages
-   * @returns {Promise<string>} the assistant's reply text
+   * @returns {Promise<{text: string, usage: object|null}>} the reply, plus the
+   *   provider's token accounting when it reports any.
    */
   async function chat(messages) {
     const apiKey = settings.getApiKey();
@@ -133,7 +136,7 @@ export function createAiClient(settings, defaults = {}) {
     if (typeof content !== 'string' || !content.trim()) {
       throw new AIRequestError('AI provider returned an empty response');
     }
-    return content.trim();
+    return { text: content.trim(), usage: normalizeUsage(body?.usage) };
   }
 
   return { chat };

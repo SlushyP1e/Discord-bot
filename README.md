@@ -31,6 +31,7 @@ A lovable, Nekotina-style Discord bot packed with love & reaction commands, marr
 
 - Or just **@mention her / reply to her messages** and she answers in the channel like a normal conversation — same brain, same memory, same rules. Off by default: it needs a privileged intent, see [below](#-chatting-by-mention).
 - Remembers the last few messages of your conversation for ~15 minutes, so follow-ups work. `fresh: true` starts over, `private: true` keeps the answer to yourself.
+- Every answer shows its token usage in the footer — `🪙 1,234 in · 210 out · 1,088 cached — 1,444 tokens` — so you can watch what a conversation actually costs. The `cached` figure is prompt tokens DeepSeek served from its cache at a fraction of the price.
 - Nothing anyone says to `/ask` is written to disk — that memory is in RAM only and vanishes on restart.
 - **Only the bot owner** can plug in an API key, choose which servers may use it, or grant `/ask` to individual people (see below).
 

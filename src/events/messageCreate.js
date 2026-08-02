@@ -133,7 +133,9 @@ export default {
 
       let answer;
       try {
-        answer = await withTyping(message.channel, () => ctx.aiClient.chat(messages));
+        // Usage is ignored here — a token count under every casual reply would
+        // be noise. /ask shows it in its embed footer.
+        ({ text: answer } = await withTyping(message.channel, () => ctx.aiClient.chat(messages)));
       } catch (err) {
         console.error('AI mention reply failed:', err.message);
         message.react('😵‍💫').catch(() => {});
