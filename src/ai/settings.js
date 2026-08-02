@@ -139,20 +139,38 @@ export class AiSettings {
   allowedGuilds() {
     return this.repo.listGuilds().map((row) => row.guild_id);
   }
+
+  // ── Per-person grants ──────────────────────────────────────────────────────
+  allowUser(userId, addedBy) {
+    return this.repo.allowUser(userId, addedBy);
+  }
+  disallowUser(userId) {
+    return this.repo.disallowUser(userId);
+  }
+  isUserAllowed(userId) {
+    return this.repo.isUserAllowed(userId);
+  }
+  allowedUsers() {
+    return this.repo.listUsers().map((row) => row.user_id);
+  }
 }
 
 /**
- * Decide whether an interaction may use the AI.
+ * Decide whether an interaction may use the AI. Three ways in, checked in order:
  *
- * The owner can always use it (that's how they enable it somewhere in the first
- * place). Everyone else needs to be in a server the owner has allow-listed —
- * an empty allow-list means the AI is off for everyone but the owner. DMs are
- * owner-only because the owner is the one paying for the API calls.
+ *   1. The owner, always and everywhere.
+ *   2. Someone the owner granted personally with /access give — also anywhere,
+ *      including DMs and servers the bot isn't even in (via a user install).
+ *   3. Anyone at all, but only inside a server on the allow-list.
+ *
+ * So an empty allow-list with no grants means the AI is owner-only, and DMs
+ * stay closed to everyone else — the owner is the one paying for the calls.
  *
  * @returns {{ok: true} | {ok: false, reason: string}}
  */
-export function checkAiAccess({ isOwner, guildId, settings }) {
+export function checkAiAccess({ isOwner, userId, guildId, settings }) {
   if (isOwner) return { ok: true };
+  if (settings.isUserAllowed(userId)) return { ok: true };
   if (!guildId) {
     return { ok: false, reason: 'My AI brain only works inside servers — try `/ask` there instead! 💭' };
   }

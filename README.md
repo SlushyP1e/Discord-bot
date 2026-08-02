@@ -32,7 +32,7 @@ A lovable, Nekotina-style Discord bot packed with love & reaction commands, marr
 - Or just **@mention her / reply to her messages** and she answers in the channel like a normal conversation — same brain, same memory, same rules. Off by default: it needs a privileged intent, see [below](#-chatting-by-mention).
 - Remembers the last few messages of your conversation for ~15 minutes, so follow-ups work. `fresh: true` starts over, `private: true` keeps the answer to yourself.
 - Nothing anyone says to `/ask` is written to disk — that memory is in RAM only and vanishes on restart.
-- **Only the bot owner** can plug in an API key or choose which servers may use it (see below).
+- **Only the bot owner** can plug in an API key, choose which servers may use it, or grant `/ask` to individual people (see below).
 
 ### 🛠️ Utility
 `/help` (interactive category browser) `/ping` `/botinfo` (shows live GIF provider health) `/avatar` `/userinfo` `/serverinfo`
@@ -78,7 +78,23 @@ Everything about the AI is locked to **you**, the bot owner — the account that
    /aiconfig allow server_id:123456789012345678
    ```
 
-Until you allow a server, `/ask` works for **you only**. Everyone else gets a polite "not switched on here". DMs are always owner-only, since you're the one paying for the API calls.
+Until you allow a server, `/ask` works for **you only**. Everyone else gets a polite "not switched on here". DMs are closed to everyone but you and anyone you've personally granted (below), since you're the one paying for the API calls.
+
+### 🎟️ Giving one person access everywhere
+
+Server-by-server is the blunt instrument. To hand `/ask` to a specific person **wherever they are** — your DMs, any server, even servers the bot has never been added to:
+
+```
+/access give user:@friend
+/access remove user:@friend
+/access list
+```
+
+A personal grant outranks the server allow-list completely: that person can use `/ask` anywhere, and nobody else's access changes. Revoking it leaves them with normal allow-listed-server access.
+
+For it to work in a server the bot **isn't in**, they need to add SlushyLove to their own account: right-click the bot's profile → **Add App**, or use the User Install link from Developer Portal → Installation. That requires **User Install** to be enabled there (Installation → Installation Contexts → tick *User Install*). Commands then follow them around Discord instead of living in a server.
+
+⚠️ Every grant spends your credit, and a granted person can use `/ask` in places you can't see. `/access list` shows exactly who has it.
 
 | Subcommand | What it does |
 |---|---|
@@ -87,7 +103,8 @@ Until you allow a server, `/ask` works for **you only**. Everyone else gets a po
 | `/aiconfig allow` / `disallow` | Add/remove a server from the allow-list (defaults to the current server). |
 | `/aiconfig servers` | List the allow-listed servers. |
 | `/aiconfig persona` | Bolt extra personality notes on top of the built-in one. Leave empty to reset. |
-| `/aiconfig status` | Current provider, model, key state and server count. |
+| `/aiconfig status` | Current provider, model, key state, server and grant counts. |
+| `/access give` / `remove` / `list` | Give one person `/ask` everywhere, DMs and un-installed servers included. |
 
 **Key storage:** set `CONFIG_SECRET` in `.env` to a long random string and the key is encrypted (AES-256-GCM) inside the SQLite database. Without it the key is stored as plain text in that database and the bot warns you at startup.
 

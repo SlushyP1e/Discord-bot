@@ -46,6 +46,11 @@ async function repliesToBot(message, botId) {
   }
 }
 
+/** Explain a silent skip when AI_DEBUG is on. Always returns undefined. */
+function skip(reason) {
+  if (config.ai.debug) console.log(`[ai] ignored a message: ${reason}`);
+}
+
 export default {
   name: Events.MessageCreate,
   async execute(message, ctx) {
@@ -61,7 +66,9 @@ export default {
         }
       }
 
-      if (message.author?.bot || message.system || message.webhookId) return;
+      if (message.author?.bot || message.system || message.webhookId) {
+        return skip('sent by a bot, webhook or Discord itself');
+      }
 
       const botId = message.client.user.id;
       const isDM = !message.guildId;
@@ -71,19 +78,44 @@ export default {
         isDM,
         mentionsEveryone: message.mentions.everyone,
       });
-      if (!triggered) return;
+      if (!triggered) {
+        // An empty content on a message that looks like it mentions the bot is
+        // the signature of a missing Message Content intent.
+        if (!message.content && !message.attachments?.size) {
+          return skip(
+            'it had NO readable content — the Message Content intent is almost ' +
+              'certainly not granted to this application',
+          );
+        }
+        return skip('it was not a direct mention or a reply to me');
+      }
 
       // Same rules as /ask: owner anywhere, everyone else only in allow-listed
       // servers. Refusals are silent here (see the note at the top).
       const access = checkAiAccess({
         isOwner: isOwner(ctx, message.author.id),
+        userId: message.author.id,
         guildId: message.guildId,
         settings: ctx.aiSettings,
       });
-      if (!access.ok || !ctx.aiSettings.hasApiKey()) return;
+      if (!access.ok) {
+        return skip(
+          message.guildId
+            ? `server ${message.guildId} is not on the allow-list (/aiconfig allow), ` +
+              `and ${message.author.id} has no personal grant (/access give)`
+            : 'DMs are limited to the owner and personally granted people',
+        );
+      }
+      if (!ctx.aiSettings.hasApiKey()) return skip('no API key is configured (/aiconfig key)');
 
       const text = stripBotMention(message.content, botId);
-      if (!text) return; // a bare ping, a sticker, an attachment with no words
+      if (!text) {
+        return skip(
+          message.content
+            ? 'nothing was left after removing my mention'
+            : 'the message content was empty — is the Message Content intent granted?',
+        );
+      }
 
       // Shared with /ask, so one person can't get two budgets by switching.
       if (checkCooldown(message.author.id, 'ask:ai', MENTION_COOLDOWN_MS) > 0) {

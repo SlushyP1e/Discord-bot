@@ -50,6 +50,12 @@ CREATE TABLE IF NOT EXISTS ai_guilds (
   added_by TEXT,
   added_at INTEGER NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS ai_users (
+  user_id  TEXT PRIMARY KEY,
+  added_by TEXT,
+  added_at INTEGER NOT NULL
+);
 `;
 
 export function createDatabase(path) {
