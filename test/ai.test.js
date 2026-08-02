@@ -6,6 +6,7 @@ import { buildEndpoint, thinkingField } from '../src/ai/client.js';
 import { buildSystemPrompt, GUARDRAILS } from '../src/ai/persona.js';
 import { createConversationStore } from '../src/ai/context.js';
 import { isTalkingToBot, stripBotMention } from '../src/ai/mention.js';
+import { normalizeUsage, formatUsage } from '../src/ai/usage.js';
 import { splitText } from '../src/utils/split.js';
 
 const DEFAULTS = {
@@ -193,6 +194,32 @@ test('the bot mention is stripped, leaving the actual question', () => {
   assert.equal(stripBotMention('<@123>', '123'), '', 'a bare ping leaves nothing to answer');
   // Someone else's mention stays put, so the model sees who was meant.
   assert.equal(stripBotMention('<@123> tell <@999> hi', '123'), 'tell <@999> hi');
+});
+
+test('token usage is normalised across providers and formatted for the footer', () => {
+  // DeepSeek, including its cache accounting.
+  const deepseek = normalizeUsage({
+    prompt_tokens: 1234,
+    completion_tokens: 210,
+    total_tokens: 1444,
+    prompt_cache_hit_tokens: 1088,
+    prompt_cache_miss_tokens: 146,
+  });
+  assert.deepEqual(deepseek, { prompt: 1234, completion: 210, total: 1444, cached: 1088 });
+  assert.equal(formatUsage(deepseek), '🪙 1,234 in · 210 out · 1,088 cached — 1,444 tokens');
+
+  // A provider with no cache reporting: no cached segment.
+  const plain = normalizeUsage({ prompt_tokens: 40, completion_tokens: 12, total_tokens: 52 });
+  assert.equal(formatUsage(plain), '🪙 40 in · 12 out — 52 tokens');
+
+  // A missing total is derived rather than shown as zero.
+  assert.equal(normalizeUsage({ prompt_tokens: 30, completion_tokens: 5 }).total, 35);
+
+  // No usage block at all — the footer just omits the line.
+  for (const empty of [undefined, null, {}, 'nonsense']) {
+    assert.equal(normalizeUsage(empty), null);
+  }
+  assert.equal(formatUsage(null), null);
 });
 
 test('long answers split on natural boundaries without losing text', () => {

@@ -5,6 +5,7 @@ import { checkCooldown } from '../../utils/cooldowns.js';
 import { checkAiAccess } from '../../ai/settings.js';
 import { buildSystemPrompt } from '../../ai/persona.js';
 import { NoApiKeyError, AIRequestError } from '../../ai/client.js';
+import { formatUsage } from '../../ai/usage.js';
 import { isOwner } from '../../utils/owner.js';
 
 // AI calls cost the owner money, so /ask gets a longer leash than the 3s
@@ -91,8 +92,9 @@ export default {
     ];
 
     let answer;
+    let usage;
     try {
-      answer = await ctx.aiClient.chat(messages);
+      ({ text: answer, usage } = await ctx.aiClient.chat(messages));
     } catch (err) {
       if (err instanceof NoApiKeyError) {
         return interaction.editReply({
@@ -115,7 +117,8 @@ export default {
         iconURL: interaction.user.displayAvatarURL({ size: 64 }),
       })
       .setDescription(chunks[0])
-      .setFooter({ text: `💭 ${question.slice(0, 180)}` });
+      // The question, and what it cost in tokens when the provider says.
+      .setFooter({ text: [`💭 ${question.slice(0, 180)}`, formatUsage(usage)].filter(Boolean).join('\n') });
 
     await interaction.editReply({ embeds: [first] });
     for (const chunk of chunks.slice(1)) {
