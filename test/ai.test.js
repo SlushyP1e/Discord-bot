@@ -114,6 +114,35 @@ test('only allow-listed servers (and the owner) can use the AI', () => {
   db.close();
 });
 
+test('a personal grant unlocks the AI everywhere, independent of servers', () => {
+  const { db, settings } = makeSettings();
+  const anywhere = (userId, guildId) => checkAiAccess({ isOwner: false, userId, guildId, settings }).ok;
+
+  assert.equal(anywhere('friend', 'g1'), false);
+  assert.equal(anywhere('friend', null), false);
+
+  assert.equal(settings.allowUser('friend', 'owner'), true);
+  assert.equal(settings.allowUser('friend', 'owner'), false); // already granted
+
+  // Every context: DMs, an allow-listed server, and a server that isn't on the
+  // list at all (which is what a user-installed /ask looks like).
+  assert.equal(anywhere('friend', null), true);
+  assert.equal(anywhere('friend', 'g1'), true);
+  assert.equal(anywhere('friend', 'some-server-the-bot-is-not-in'), true);
+  // Everyone else is unaffected.
+  assert.equal(anywhere('stranger', 'g1'), false);
+  assert.deepEqual(settings.allowedUsers(), ['friend']);
+
+  assert.equal(settings.disallowUser('friend'), true);
+  assert.equal(anywhere('friend', null), false);
+
+  // Revoking a personal grant leaves normal server access intact.
+  settings.allowGuild('g1', 'owner');
+  assert.equal(anywhere('friend', 'g1'), true);
+  assert.equal(anywhere('friend', null), false);
+  db.close();
+});
+
 test('the guardrails are always appended last, after any owner persona', () => {
   const plain = buildSystemPrompt(null);
   assert.ok(plain.endsWith(GUARDRAILS));

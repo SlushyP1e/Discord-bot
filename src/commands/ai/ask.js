@@ -49,6 +49,7 @@ export default {
   async execute(interaction, ctx) {
     const access = checkAiAccess({
       isOwner: isOwner(ctx, interaction.user.id),
+      userId: interaction.user.id,
       guildId: interaction.guildId,
       settings: ctx.aiSettings,
     });

@@ -94,14 +94,16 @@ export default {
       // servers. Refusals are silent here (see the note at the top).
       const access = checkAiAccess({
         isOwner: isOwner(ctx, message.author.id),
+        userId: message.author.id,
         guildId: message.guildId,
         settings: ctx.aiSettings,
       });
       if (!access.ok) {
         return skip(
           message.guildId
-            ? `server ${message.guildId} is not on the allow-list (/aiconfig allow)`
-            : 'DMs are owner-only',
+            ? `server ${message.guildId} is not on the allow-list (/aiconfig allow), ` +
+              `and ${message.author.id} has no personal grant (/access give)`
+            : 'DMs are limited to the owner and personally granted people',
         );
       }
       if (!ctx.aiSettings.hasApiKey()) return skip('no API key is configured (/aiconfig key)');

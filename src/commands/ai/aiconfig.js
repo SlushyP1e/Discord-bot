@@ -215,6 +215,7 @@ export default {
                 { name: 'Model', value: settings.model, inline: true },
                 { name: 'Base URL', value: settings.baseUrl },
                 { name: 'Allowed servers', value: `${allowed.length}`, inline: true },
+                { name: 'Granted people', value: `${settings.allowedUsers().length}`, inline: true },
                 { name: 'Extra persona', value: settings.persona ? '✅ set' : '— default —', inline: true },
               )
               .setFooter({ text: 'Only you can see or change any of this.' }),
