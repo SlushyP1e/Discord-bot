@@ -28,7 +28,12 @@ services:
       DATA_DIR: /app/data
 
       # ── Optional ───────────────────────────────────────────────────────────
+      # A server ID. Commands appear there INSTANTLY instead of taking up to an
+      # hour to propagate globally the first time. Handy while setting up —
+      # remove it once everything works, or commands only exist in that server.
+      # GUILD_ID: "123456789012345678"
       # Your Discord user ID. Auto-detected from the app owner if left out.
+      # Needed if the Discord application is owned by a team rather than you.
       # OWNER_ID: "123456789012345678"
       # Chat by @mention as well as /ask. Needs the Message Content intent
       # enabled in the Developer Portal FIRST, or the bot won't start.
