@@ -160,7 +160,7 @@ The system prompt lets her be sassy on purpose: she teases, roasts bad takes and
 
 ### 🎭 Tuning her tone
 
-The built-in persona deliberately bans roleplay stage directions (`*blinks*`, `*twirls dramatically*`), kaomoji, "uwu", stretched words and more than one emoji per message — left to its own devices a model will drift into that within a few replies. If she still slips:
+The built-in persona deliberately bans roleplay stage directions (`*blinks*`, `*twirls dramatically*`), kaomoji, "uwu", stretched words, more than one emoji per message, and plugging her own commands — left to its own devices a model will drift into all of that within a few replies. She's a general chat companion who happens to be called SlushyLove, not a mascot for the hug commands. If she still slips:
 
 - Lower `AI_TEMPERATURE` (`0.5` is noticeably more grounded; the default is `0.7`).
 - Add a nudge with `/aiconfig persona`, e.g. *"Be blunt and a bit sarcastic. No emoji at all."*
