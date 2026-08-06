@@ -51,6 +51,7 @@ const ctx = {
     temperature: config.ai.temperature,
     maxTokens: config.ai.maxTokens,
     thinking: config.ai.thinking,
+    reasoningEffort: config.ai.reasoningEffort,
   }),
   conversations: createConversationStore({ maxTurns: config.ai.memoryTurns }),
   // Resolved on ready to the Discord app owner (or config.ownerId override).

@@ -45,6 +45,10 @@ export const config = {
     // 'disabled' / 'enabled' — force it either way on any provider.
     // 'omit'     — never send the field.
     thinking: process.env.AI_THINKING?.trim() || 'auto',
+    // For OpenAI reasoning models (GPT-5 family, o-series): how much hidden
+    // thinking to buy. 'minimal' is the cheap, fast choice for chat.
+    // minimal | low | medium | high, or 'default' to let the model decide.
+    reasoningEffort: process.env.AI_REASONING_EFFORT?.trim() || 'minimal',
     // How many past messages to resend as context on each /ask.
     memoryTurns: num(process.env.AI_MEMORY_TURNS, 8),
     // Chat by @mention / reply as well as /ask. Off by default because it needs

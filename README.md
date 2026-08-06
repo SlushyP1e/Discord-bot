@@ -32,7 +32,7 @@ A lovable, Nekotina-style Discord bot packed with love & reaction commands, marr
 
 - Or just **@mention her / reply to her messages** and she answers in the channel like a normal conversation — same brain, same memory, same rules. Off by default: it needs a privileged intent, see [below](#-chatting-by-mention).
 - Remembers the last few messages of your conversation for ~15 minutes, so follow-ups work. `fresh: true` starts over, `private: true` keeps the answer to yourself.
-- Every answer shows its token usage in the footer — `🪙 1,234 in · 210 out · 1,088 cached — 1,444 tokens` — so you can watch what a conversation actually costs. The `cached` figure is prompt tokens DeepSeek served from its cache at a fraction of the price.
+- Every answer shows its token usage in the footer — `🪙 1,234 in · 210 out · 1,088 cached — 1,444 tokens` — so you can watch what a conversation actually costs. `cached` is prompt tokens the provider served from its cache at a fraction of the price; `thinking` (reasoning models only) is hidden reasoning you don't see but do pay for.
 - Nothing anyone says to `/ask` is written to disk — that memory is in RAM only and vanishes on restart.
 - **Only the bot owner** can plug in an API key, choose which servers may use it, or grant `/ask` to individual people (see below).
 
@@ -110,7 +110,15 @@ For it to work in a server the bot **isn't in**, they need to add SlushyLove to 
 
 **Key storage:** set `CONFIG_SECRET` in `.env` to a long random string and the key is encrypted (AES-256-GCM) inside the SQLite database. Without it the key is stored as plain text in that database and the bot warns you at startup.
 
-**Other providers:** anything speaking the OpenAI `/chat/completions` dialect works — `/aiconfig key api_key:... base_url:https://api.openai.com/v1 model:gpt-4o-mini`.
+**Other providers:** anything speaking the OpenAI `/chat/completions` dialect works. To switch to OpenAI's budget tier:
+
+```
+/aiconfig key api_key:sk-your-openai-key base_url:https://api.openai.com/v1 model:gpt-5-nano provider:openai
+```
+
+The request body is shaped per model automatically. GPT-5 and o-series models reject `temperature` and renamed the token cap to `max_completion_tokens`, so those are handled for you — the bot detects them from the model name, including proxied forms like `openai/gpt-5-nano`. Classic models (`gpt-4o-mini`, Groq, Llama) keep the parameters they understand, and only DeepSeek ever sees the `thinking` field.
+
+`AI_REASONING_EFFORT` (default `minimal`) controls how much hidden thinking a reasoning model buys before answering. Those thinking tokens are invisible in the reply but billed at the output rate, so `minimal` is the right setting for chat; `low`/`medium`/`high` trade money and latency for depth, and `default` lets the model choose. Because that budget shares the completion cap, reasoning models get a floor of 1,200 tokens regardless of `AI_MAX_TOKENS` — otherwise the model can spend the entire allowance thinking and return nothing.
 
 ### 💬 Chatting by mention
 
@@ -172,14 +180,37 @@ docker compose up -d --build
 docker compose logs -f   # look for "Logged in as SlushyLove#..."
 ```
 
-### 2b. Run on TrueNAS with Portainer
+### 2b. Run on ZimaOS (or CasaOS)
+
+ZimaOS installs apps from a compose file but can't build one from source, so the bot ships as a prebuilt image.
+
+1. **Publish the image once.** GitHub → **Actions** → *Publish container image* → **Run workflow**. (It also runs automatically whenever `src/` or the `Dockerfile` changes on `main`.)
+2. **Make the package public.** GitHub → your profile → **Packages** → `discord-bot` → **Package settings** → **Change visibility** → *Public*. Skip this and ZimaOS fails the pull with `denied`.
+3. **Import it.** Open [`docker-compose.zimaos.yml`](docker-compose.zimaos.yml), fill in `DISCORD_TOKEN` and `CONFIG_SECRET`, then in the ZimaOS dashboard: **➕** (top right) → **Import** → **Docker Compose** → paste → **Submit**.
+4. There's no web UI — it's a bot, it only makes outbound connections — so leave any port or WebUI field blank.
+5. Configure the AI from inside Discord with `/aiconfig key`. Nothing else needs editing on the NAS.
+
+Data lives in `/DATA/AppData/slushylove`, which is ZimaOS's app-data convention, so it survives updates and restarts. To upgrade later: re-run the workflow, then hit **Update** on the app tile (or `docker compose pull && docker compose up -d` over SSH).
+
+**Prefer not to publish an image?** ZimaOS has SSH and a normal Docker CLI, so you can clone and build on the device instead:
+
+```bash
+git clone https://github.com/SlushyP1e/Discord-bot.git /DATA/AppData/slushylove-src
+cd /DATA/AppData/slushylove-src
+cp .env.example .env   # add your token
+docker compose up -d --build
+```
+
+That skips steps 1–3 entirely, at the cost of the app not appearing as a ZimaOS tile.
+
+### 2c. Run on TrueNAS with Portainer
 1. In Portainer: **Stacks → Add stack → Repository**, point it at this Git repo (or paste `docker-compose.yml` into the web editor — for the editor, change `build: .` to a prebuilt image you've pushed, or use the Repository option so Portainer can build).
 2. Under **Environment variables** add `DISCORD_TOKEN` (and optionally `GUILD_ID`) — with the web editor, also delete the `env_file: .env` line since there's no file.
 3. Deploy. The SQLite database lives in the `slushylove-data` volume, so marriages and counters survive updates/restarts.
 
 To use a dataset path instead of the named volume, mount e.g. `/mnt/pool/apps/slushylove:/app/data` and make sure the folder is writable by uid `1000`.
 
-### 2c. Run bare (no Docker)
+### 2d. Run bare (no Docker)
 ```bash
 npm install
 cp .env.example .env     # add your token
@@ -200,6 +231,7 @@ npm start
 | `AI_MODEL` | — | Default `deepseek-v4-flash` |
 | `AI_PERSONA` | — | Extra personality notes (safety rules still apply). Also settable via `/aiconfig persona`. |
 | `AI_THINKING` | — | `auto` (default, off on DeepSeek) / `enabled` / `disabled` / `omit` |
+| `AI_REASONING_EFFORT` | — | GPT-5/o-series thinking budget. `minimal` (default) / `low` / `medium` / `high` / `default`. |
 | `AI_MEMORY_TURNS` | — | Past messages resent as context. Default `8`. |
 | `AI_MENTION_CHAT` | — | `true` to also chat by @mention/reply. Needs the Message Content intent. |
 | `AI_TIMEOUT_MS` / `AI_TEMPERATURE` / `AI_MAX_TOKENS` | — | Request tuning. Defaults `30000` / `0.7` / `400`. |

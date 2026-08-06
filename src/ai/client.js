@@ -5,6 +5,10 @@
 // /aiconfig changes apply to the very next /ask with no restart.
 
 import { normalizeUsage } from './usage.js';
+import { buildRequestBody } from './dialect.js';
+
+// Re-exported so callers have one place to import the AI client's surface from.
+export { thinkingField, isReasoningModel } from './dialect.js';
 
 /** No API key configured yet — the owner still needs to run /aiconfig key. */
 export class NoApiKeyError extends Error {
@@ -16,10 +20,12 @@ export class NoApiKeyError extends Error {
 
 /** Any failed AI request: HTTP error, timeout, or an unusable response body. */
 export class AIRequestError extends Error {
-  constructor(message, { status } = {}) {
+  constructor(message, { status, reason } = {}) {
     super(message);
     this.name = 'AIRequestError';
     this.status = status;
+    /** A non-HTTP failure kind, e.g. 'length' when the token cap ran out. */
+    this.reason = reason;
   }
 }
 
@@ -36,32 +42,6 @@ export function buildEndpoint(baseUrl) {
 }
 
 /**
- * Work out the `thinking` field for a request body, or null to leave it out.
- *
- * DeepSeek's V4 models think by default and bill those reasoning tokens as
- * output — expensive and slow for a chat bot that should be firing off
- * one-liners. So on DeepSeek we switch it off explicitly. It's a DeepSeek
- * extension though, not part of the OpenAI spec, so other providers (which
- * might reject an unknown field) never see it unless you ask for it by name.
- *
- * @param {string} endpoint
- * @param {'auto'|'disabled'|'enabled'|'omit'} mode
- */
-export function thinkingField(endpoint, mode = 'auto') {
-  if (mode === 'omit') return null;
-  if (mode === 'auto') {
-    let host;
-    try {
-      host = new URL(endpoint).hostname;
-    } catch {
-      return null;
-    }
-    return /(^|\.)deepseek\.com$/i.test(host) ? { type: 'disabled' } : null;
-  }
-  return { type: mode };
-}
-
-/**
  * @param {import('./settings.js').AiSettings} settings
  * @param {{timeoutMs?: number, temperature?: number, maxTokens?: number, thinking?: string}} [defaults]
  */
@@ -70,6 +50,7 @@ export function createAiClient(settings, defaults = {}) {
   const temperature = defaults.temperature ?? 0.9;
   const maxTokens = defaults.maxTokens ?? 400;
   const thinkingMode = defaults.thinking ?? 'auto';
+  const reasoningEffort = defaults.reasoningEffort ?? 'minimal';
 
   /**
    * @param {Array<{role: string, content: string}>} messages
@@ -81,7 +62,15 @@ export function createAiClient(settings, defaults = {}) {
     if (!apiKey) throw new NoApiKeyError();
 
     const endpoint = buildEndpoint(settings.baseUrl);
-    const thinking = thinkingField(endpoint, thinkingMode);
+    const payload = buildRequestBody({
+      endpoint,
+      model: settings.model,
+      messages,
+      temperature,
+      maxTokens,
+      thinkingMode,
+      reasoningEffort,
+    });
 
     // Bail out rather than leaving the interaction hanging on a slow provider.
     const controller = new AbortController();
@@ -95,14 +84,7 @@ export function createAiClient(settings, defaults = {}) {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${apiKey}`,
         },
-        body: JSON.stringify({
-          model: settings.model,
-          messages,
-          temperature,
-          max_tokens: maxTokens,
-          stream: false,
-          ...(thinking ? { thinking } : {}),
-        }),
+        body: JSON.stringify(payload),
         signal: controller.signal,
       });
     } catch (err) {
@@ -132,8 +114,18 @@ export function createAiClient(settings, defaults = {}) {
       throw new AIRequestError(`AI provider returned non-JSON: ${err.message}`);
     }
 
-    const content = body?.choices?.[0]?.message?.content;
+    const choice = body?.choices?.[0];
+    const content = choice?.message?.content;
     if (typeof content !== 'string' || !content.trim()) {
+      // A reasoning model can burn the whole completion budget on hidden
+      // thinking and stop before writing a word. That's a cap problem, not a
+      // broken provider, and it needs a different fix from the user.
+      if (choice?.finish_reason === 'length') {
+        throw new AIRequestError(
+          'AI provider hit its token cap before writing an answer — raise AI_MAX_TOKENS or lower AI_REASONING_EFFORT',
+          { reason: 'length' },
+        );
+      }
       throw new AIRequestError('AI provider returned an empty response');
     }
     return { text: content.trim(), usage: normalizeUsage(body?.usage) };

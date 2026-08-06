@@ -15,6 +15,12 @@ const ASK_COOLDOWN_MS = 8000;
 /** A friendly, in-character message for whatever went wrong upstream. */
 function failureMessage(err) {
   if (err instanceof AIRequestError) {
+    if (err.reason === 'length') {
+      return 'I ran out of room thinking that one through 🫠 My owner can raise `AI_MAX_TOKENS`.';
+    }
+    if (err.status === 400) {
+      return "My provider didn't like that request 🤨 My owner should check the model name in `/aiconfig status`.";
+    }
     if (err.status === 401 || err.status === 403) {
       return 'My AI key got rejected 🔑 My owner needs to run `/aiconfig key` again.';
     }
