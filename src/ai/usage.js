@@ -11,12 +11,16 @@ export function normalizeUsage(usage) {
   const prompt = Number(usage.prompt_tokens) || 0;
   const completion = Number(usage.completion_tokens) || 0;
   const total = Number(usage.total_tokens) || prompt + completion;
-  // DeepSeek-specific: how much of the prompt was served from its cache, which
-  // is billed at a fraction of the normal input rate.
-  const cached = Number(usage.prompt_cache_hit_tokens) || 0;
+  // How much of the prompt was served from cache, billed at a fraction of the
+  // normal input rate. DeepSeek and OpenAI report it under different names.
+  const cached =
+    Number(usage.prompt_cache_hit_tokens) || Number(usage.prompt_tokens_details?.cached_tokens) || 0;
+  // Hidden thinking on reasoning models. Invisible in the reply, but included
+  // in completion_tokens and paid for at the output rate.
+  const reasoning = Number(usage.completion_tokens_details?.reasoning_tokens) || 0;
 
   if (!prompt && !completion && !total) return null;
-  return { prompt, completion, total, cached };
+  return { prompt, completion, total, cached, reasoning };
 }
 
 const n = (value) => value.toLocaleString('en-US');
@@ -25,6 +29,7 @@ const n = (value) => value.toLocaleString('en-US');
 export function formatUsage(usage) {
   if (!usage) return null;
   const parts = [`${n(usage.prompt)} in`, `${n(usage.completion)} out`];
+  if (usage.reasoning > 0) parts.push(`${n(usage.reasoning)} thinking`);
   if (usage.cached > 0) parts.push(`${n(usage.cached)} cached`);
   return `🪙 ${parts.join(' · ')} — ${n(usage.total)} tokens`;
 }

@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { createDatabase } from '../src/db/database.js';
 import { AiSettings, checkAiAccess } from '../src/ai/settings.js';
 import { buildEndpoint, thinkingField } from '../src/ai/client.js';
+import { buildRequestBody, isReasoningModel, REASONING_MIN_TOKENS } from '../src/ai/dialect.js';
 import { buildSystemPrompt, GUARDRAILS } from '../src/ai/persona.js';
 import { createConversationStore } from '../src/ai/context.js';
 import { isTalkingToBot, stripBotMention } from '../src/ai/mention.js';
@@ -46,6 +47,52 @@ test('thinking mode is switched off on DeepSeek and left alone elsewhere', () =>
   // Explicit modes win everywhere.
   assert.deepEqual(thinkingField('https://api.openai.com/v1', 'enabled'), { type: 'enabled' });
   assert.equal(thinkingField('https://api.deepseek.com', 'omit'), null);
+});
+
+test('reasoning models are detected by name, however they are prefixed', () => {
+  for (const model of ['gpt-5-nano', 'GPT-5', 'gpt-5.4-mini', 'openai/gpt-5-nano', 'o3-mini', 'o1']) {
+    assert.equal(isReasoningModel(model), true, model);
+  }
+  for (const model of ['gpt-4o-mini', 'deepseek-v4-flash', 'llama-3.3-70b-versatile', 'gpt-51', '', undefined]) {
+    assert.equal(isReasoningModel(model), false, String(model));
+  }
+});
+
+test('the request body is shaped for the model dialect', () => {
+  const common = { endpoint: 'https://api.openai.com/v1/chat/completions', messages: [], temperature: 0.7, maxTokens: 400 };
+
+  // GPT-5 rejects `temperature` outright and renamed the cap.
+  const nano = buildRequestBody({ ...common, model: 'gpt-5-nano' });
+  assert.equal('temperature' in nano, false, 'temperature would 400 this model');
+  assert.equal('max_tokens' in nano, false, 'max_tokens would 400 this model');
+  assert.equal(nano.reasoning_effort, 'minimal');
+  // Hidden thinking bills against this cap, so it gets a floor.
+  assert.equal(nano.max_completion_tokens, REASONING_MIN_TOKENS);
+  assert.equal(
+    buildRequestBody({ ...common, model: 'gpt-5-nano', maxTokens: 4000 }).max_completion_tokens,
+    4000,
+    'a bigger configured cap is respected',
+  );
+  assert.equal(
+    'reasoning_effort' in buildRequestBody({ ...common, model: 'gpt-5-nano', reasoningEffort: 'default' }),
+    false,
+  );
+
+  // Classic chat models keep the parameters they understand.
+  const classic = buildRequestBody({ ...common, model: 'gpt-4o-mini' });
+  assert.equal(classic.temperature, 0.7);
+  assert.equal(classic.max_tokens, 400);
+  assert.equal('thinking' in classic, false, 'never sent to OpenAI');
+  assert.equal('reasoning_effort' in classic, false);
+
+  // DeepSeek still gets its thinking switch.
+  const deepseek = buildRequestBody({
+    ...common,
+    endpoint: 'https://api.deepseek.com/chat/completions',
+    model: 'deepseek-v4-flash',
+  });
+  assert.deepEqual(deepseek.thinking, { type: 'disabled' });
+  assert.equal(deepseek.max_tokens, 400);
 });
 
 test('settings fall back to env defaults until the owner overrides them', () => {
@@ -205,10 +252,22 @@ test('token usage is normalised across providers and formatted for the footer', 
     prompt_cache_hit_tokens: 1088,
     prompt_cache_miss_tokens: 146,
   });
-  assert.deepEqual(deepseek, { prompt: 1234, completion: 210, total: 1444, cached: 1088 });
+  assert.deepEqual(deepseek, { prompt: 1234, completion: 210, total: 1444, cached: 1088, reasoning: 0 });
   assert.equal(formatUsage(deepseek), '🪙 1,234 in · 210 out · 1,088 cached — 1,444 tokens');
 
-  // A provider with no cache reporting: no cached segment.
+  // OpenAI reports cached input and hidden reasoning under different names.
+  const openai = normalizeUsage({
+    prompt_tokens: 800,
+    completion_tokens: 350,
+    total_tokens: 1150,
+    prompt_tokens_details: { cached_tokens: 640 },
+    completion_tokens_details: { reasoning_tokens: 256 },
+  });
+  assert.equal(openai.cached, 640);
+  assert.equal(openai.reasoning, 256);
+  assert.equal(formatUsage(openai), '🪙 800 in · 350 out · 256 thinking · 640 cached — 1,150 tokens');
+
+  // A provider with no cache or reasoning reporting: neither segment appears.
   const plain = normalizeUsage({ prompt_tokens: 40, completion_tokens: 12, total_tokens: 52 });
   assert.equal(formatUsage(plain), '🪙 40 in · 12 out — 52 tokens');
 
