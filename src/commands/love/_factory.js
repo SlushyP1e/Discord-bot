@@ -7,6 +7,14 @@ import {
 } from 'discord.js';
 import { COLORS, errorEmbed, loveEmbed, ordinal, simpleEmbed } from '../../utils/embeds.js';
 import { DM_AND_GUILD, scopeId } from '../../utils/scope.js';
+import { implicitTargetFor } from '../../utils/dmTarget.js';
+
+// Why we couldn't work out who to aim at, in the bot's voice.
+const NO_TARGET = {
+  guild: (name) => `Who am I supposed to ${name}? Pick someone with the \`user\` option! 👀`,
+  crowded: (name) => `There's a whole crowd in here — tell me who to ${name} with the \`user\` option! 👀`,
+  unknown: (name) => `I can't tell who else is here — name them with the \`user\` option and I'll ${name} them! 👀`,
+};
 
 /** Registry of targeted actions so button handlers can look up their config. */
 export const LOVE_ACTIONS = new Map();
@@ -68,13 +76,36 @@ export function targeted(opts) {
     .setDescription(opts.description)
     .setContexts(DM_AND_GUILD)
     .addUserOption((o) =>
-      o.setName('user').setDescription(`Who do you want to ${opts.name}?`).setRequired(true),
+      o
+        .setName('user')
+        .setDescription(`Who do you want to ${opts.name}? (in a DM, leave blank for the other person)`)
+        .setRequired(false),
     );
 
   return {
     data,
     async execute(interaction, ctx) {
-      const target = interaction.options.getUser('user');
+      // Naming someone always wins — that's also how you target yourself.
+      let target = interaction.options.getUser('user');
+      if (!target) {
+        const implied = implicitTargetFor(interaction);
+        if (!implied.ok) {
+          return interaction.reply({
+            embeds: [errorEmbed(NO_TARGET[implied.reason](opts.name))],
+            flags: MessageFlags.Ephemeral,
+          });
+        }
+        target =
+          implied.userId === interaction.client.user.id
+            ? interaction.client.user
+            : await interaction.client.users.fetch(implied.userId).catch(() => null);
+        if (!target) {
+          return interaction.reply({
+            embeds: [errorEmbed(NO_TARGET.unknown(opts.name))],
+            flags: MessageFlags.Ephemeral,
+          });
+        }
+      }
 
       if (target.id === interaction.user.id) {
         return interaction.reply({ embeds: [simpleEmbed(COLORS.fun, opts.self)] });

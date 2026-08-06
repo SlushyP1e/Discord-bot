@@ -11,6 +11,7 @@ A lovable, Nekotina-style Discord bot packed with love & reaction commands, marr
 - Hit a landmark (10, 25, 50, 100…) and the bot throws a little **milestone celebration** 🎉
 - Anime source is shown when known (*"From: Clannad"*)
 - Most commands add a **"Hug back!" button** only the target can press 👀
+- **In a one-on-one DM you can skip the target** — `/hug` on its own hugs whoever you're talking to. In a DM with SlushyLove herself, it hugs her. Naming someone always wins, so `/hug user:@yourself` is how you self-hug. In a server or a group DM she asks who you meant rather than guessing.
 - Targeting yourself or the bot gets special (sassy) responses
 
 ### 💍 Marriage & shipping
