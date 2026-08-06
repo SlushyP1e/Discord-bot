@@ -184,7 +184,8 @@ docker compose logs -f   # look for "Logged in as SlushyLove#..."
 
 ZimaOS installs apps from a compose file but can't build one from source, so the bot ships as a prebuilt image.
 
-1. **Publish the image once.** GitHub → **Actions** → *Publish container image* → **Run workflow**. (It also runs automatically whenever `src/` or the `Dockerfile` changes on `main`.)
+1. **Publish the image once.** GitHub → **Actions** → *Publish container image* → **Run workflow**. (It also runs automatically when `src/` or the `Dockerfile` changes on the default branch.)
+   > GitHub only lists a workflow — and only shows its **Run workflow** button — once the file is on the repository's **default branch**. If Actions shows you a "Choose a workflow" gallery instead, the workflow hasn't been merged yet. Merge it first; don't configure one of the suggested templates.
 2. **Make the package public.** GitHub → your profile → **Packages** → `discord-bot` → **Package settings** → **Change visibility** → *Public*. Skip this and ZimaOS fails the pull with `denied`.
 3. **Import it.** Open [`docker-compose.zimaos.yml`](docker-compose.zimaos.yml), fill in `DISCORD_TOKEN` and `CONFIG_SECRET`, then in the ZimaOS dashboard: **➕** (top right) → **Import** → **Docker Compose** → paste → **Submit**.
 4. There's no web UI — it's a bot, it only makes outbound connections — so leave any port or WebUI field blank.
