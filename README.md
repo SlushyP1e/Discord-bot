@@ -160,7 +160,7 @@ The system prompt lets her be sassy on purpose: she teases, roasts bad takes and
 
 ### 🎭 Tuning her tone
 
-The built-in persona deliberately bans roleplay stage directions (`*blinks*`, `*twirls dramatically*`), kaomoji, "uwu", stretched words and more than one emoji per message — left to its own devices a model will drift into that within a few replies. If she still slips:
+The built-in persona deliberately bans roleplay stage directions (`*blinks*`, `*twirls dramatically*`), kaomoji, "uwu", stretched words, more than one emoji per message, and plugging her own commands — left to its own devices a model will drift into all of that within a few replies. She's a general chat companion who happens to be called SlushyLove, not a mascot for the hug commands. If she still slips:
 
 - Lower `AI_TEMPERATURE` (`0.5` is noticeably more grounded; the default is `0.7`).
 - Add a nudge with `/aiconfig persona`, e.g. *"Be blunt and a bit sarcastic. No emoji at all."*
@@ -184,7 +184,8 @@ docker compose logs -f   # look for "Logged in as SlushyLove#..."
 
 ZimaOS installs apps from a compose file but can't build one from source, so the bot ships as a prebuilt image.
 
-1. **Publish the image once.** GitHub → **Actions** → *Publish container image* → **Run workflow**. (It also runs automatically whenever `src/` or the `Dockerfile` changes on `main`.)
+1. **Publish the image once.** GitHub → **Actions** → *Publish container image* → **Run workflow**. (It also runs automatically when `src/` or the `Dockerfile` changes on the default branch.)
+   > GitHub only lists a workflow — and only shows its **Run workflow** button — once the file is on the repository's **default branch**. If Actions shows you a "Choose a workflow" gallery instead, the workflow hasn't been merged yet. Merge it first; don't configure one of the suggested templates.
 2. **Make the package public.** GitHub → your profile → **Packages** → `discord-bot` → **Package settings** → **Change visibility** → *Public*. Skip this and ZimaOS fails the pull with `denied`.
 3. **Import it.** Open [`docker-compose.zimaos.yml`](docker-compose.zimaos.yml), fill in `DISCORD_TOKEN` and `CONFIG_SECRET`, then in the ZimaOS dashboard: **➕** (top right) → **Import** → **Docker Compose** → paste → **Submit**.
 4. There's no web UI — it's a bot, it only makes outbound connections — so leave any port or WebUI field blank.

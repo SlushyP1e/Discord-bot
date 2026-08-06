@@ -6,7 +6,11 @@ name: Publish container image
 
 on:
   push:
-    branches: [main]
+    # This repo's default branch isn't called main, so both are listed —
+    # whichever exists is the one that fires. Add yours here if you rename it.
+    branches:
+      - main
+      - claude/slushylove-discord-bot-t411y3
     paths:
       - 'src/**'
       - 'package.json'
