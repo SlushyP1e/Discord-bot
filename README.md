@@ -180,14 +180,37 @@ docker compose up -d --build
 docker compose logs -f   # look for "Logged in as SlushyLove#..."
 ```
 
-### 2b. Run on TrueNAS with Portainer
+### 2b. Run on ZimaOS (or CasaOS)
+
+ZimaOS installs apps from a compose file but can't build one from source, so the bot ships as a prebuilt image.
+
+1. **Publish the image once.** GitHub → **Actions** → *Publish container image* → **Run workflow**. (It also runs automatically whenever `src/` or the `Dockerfile` changes on `main`.)
+2. **Make the package public.** GitHub → your profile → **Packages** → `discord-bot` → **Package settings** → **Change visibility** → *Public*. Skip this and ZimaOS fails the pull with `denied`.
+3. **Import it.** Open [`docker-compose.zimaos.yml`](docker-compose.zimaos.yml), fill in `DISCORD_TOKEN` and `CONFIG_SECRET`, then in the ZimaOS dashboard: **➕** (top right) → **Import** → **Docker Compose** → paste → **Submit**.
+4. There's no web UI — it's a bot, it only makes outbound connections — so leave any port or WebUI field blank.
+5. Configure the AI from inside Discord with `/aiconfig key`. Nothing else needs editing on the NAS.
+
+Data lives in `/DATA/AppData/slushylove`, which is ZimaOS's app-data convention, so it survives updates and restarts. To upgrade later: re-run the workflow, then hit **Update** on the app tile (or `docker compose pull && docker compose up -d` over SSH).
+
+**Prefer not to publish an image?** ZimaOS has SSH and a normal Docker CLI, so you can clone and build on the device instead:
+
+```bash
+git clone https://github.com/SlushyP1e/Discord-bot.git /DATA/AppData/slushylove-src
+cd /DATA/AppData/slushylove-src
+cp .env.example .env   # add your token
+docker compose up -d --build
+```
+
+That skips steps 1–3 entirely, at the cost of the app not appearing as a ZimaOS tile.
+
+### 2c. Run on TrueNAS with Portainer
 1. In Portainer: **Stacks → Add stack → Repository**, point it at this Git repo (or paste `docker-compose.yml` into the web editor — for the editor, change `build: .` to a prebuilt image you've pushed, or use the Repository option so Portainer can build).
 2. Under **Environment variables** add `DISCORD_TOKEN` (and optionally `GUILD_ID`) — with the web editor, also delete the `env_file: .env` line since there's no file.
 3. Deploy. The SQLite database lives in the `slushylove-data` volume, so marriages and counters survive updates/restarts.
 
 To use a dataset path instead of the named volume, mount e.g. `/mnt/pool/apps/slushylove:/app/data` and make sure the folder is writable by uid `1000`.
 
-### 2c. Run bare (no Docker)
+### 2d. Run bare (no Docker)
 ```bash
 npm install
 cp .env.example .env     # add your token

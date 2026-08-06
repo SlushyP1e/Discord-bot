@@ -1,0 +1,58 @@
+# SlushyLove on ZimaOS (or CasaOS).
+#
+# Paste this into: ZimaOS dashboard → ➕ (top right) → Import → Docker Compose.
+# There's no web UI to expose — it's a bot, it only makes outbound connections —
+# so leave the port/WebUI fields blank if the importer offers them.
+#
+# Before pasting, fill in DISCORD_TOKEN and CONFIG_SECRET below. Everything
+# else about the AI is configured from inside Discord with /aiconfig.
+#
+# The image is published by .github/workflows/publish-image.yml. Make the GHCR
+# package PUBLIC once after the first build (GitHub → your profile → Packages →
+# discord-bot → Package settings → Change visibility), otherwise ZimaOS gets a
+# "denied" error when it tries to pull.
+
+services:
+  slushylove:
+    image: ghcr.io/slushyp1e/discord-bot:latest
+    container_name: slushylove
+    restart: unless-stopped
+    environment:
+      # ── Required ───────────────────────────────────────────────────────────
+      DISCORD_TOKEN: paste-your-bot-token-here
+      # A long random string. Encrypts the AI API key at rest. Change it later
+      # and you'll need to re-run /aiconfig key.
+      CONFIG_SECRET: change-me-to-a-long-random-string
+
+      # ── Fixed for this container ───────────────────────────────────────────
+      DATA_DIR: /app/data
+
+      # ── Optional ───────────────────────────────────────────────────────────
+      # Your Discord user ID. Auto-detected from the app owner if left out.
+      # OWNER_ID: "123456789012345678"
+      # Chat by @mention as well as /ask. Needs the Message Content intent
+      # enabled in the Developer Portal FIRST, or the bot won't start.
+      AI_MENTION_CHAT: "false"
+      # Log why a mention was ignored, when it isn't replying and you want to know.
+      AI_DEBUG: "false"
+    volumes:
+      # ZimaOS keeps app data under /DATA/AppData. The SQLite database lives
+      # here, so marriages, counters and your AI settings survive updates.
+      - /DATA/AppData/slushylove:/app/data
+
+# If the importer refuses the file or leaves the app unnamed, uncomment this
+# block — CasaOS-derived stores use it for the tile's title and description.
+# x-casaos:
+#   architectures:
+#     - amd64
+#   main: slushylove
+#   author: SlushyP1e
+#   developer: SlushyP1e
+#   category: Utilities
+#   title:
+#     en_us: SlushyLove
+#   tagline:
+#     en_us: Love commands, mini-games and an AI /ask command
+#   description:
+#     en_us: A Discord bot with reaction GIFs, marriage, mini-games and a
+#       DeepSeek-powered /ask command.
