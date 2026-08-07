@@ -23,7 +23,10 @@ export default {
         .setName('key')
         .setDescription('Set the AI API key (and optionally the model / provider)')
         .addStringOption((o) =>
-          o.setName('api_key').setDescription('Your DeepSeek (or other) API key — never shown again').setRequired(true),
+          o
+            .setName('api_key')
+            .setDescription('API key — never shown again. Leave blank to keep the current one.')
+            .setRequired(false),
         )
         .addStringOption((o) =>
           o.setName('model').setDescription('Model name, e.g. deepseek-chat'),
@@ -75,23 +78,36 @@ export default {
     switch (sub) {
       case 'key': {
         const baseUrl = interaction.options.getString('base_url');
+        const apiKey = interaction.options.getString('api_key');
+        const model = interaction.options.getString('model');
+        const provider = interaction.options.getString('provider');
+
+        // Everything is optional so you can swap just the model without
+        // re-pasting the key — but at least one field has to be given.
+        if (!apiKey && !baseUrl && !model && !provider) {
+          return interaction.reply({
+            embeds: [errorEmbed('Give me something to change — `api_key`, `model`, `base_url` or `provider`.')],
+            ...ephemeral,
+          });
+        }
+        if (!apiKey && !settings.hasApiKey()) {
+          return interaction.reply({
+            embeds: [errorEmbed("There's no key stored yet, so this first one has to include `api_key`.")],
+            ...ephemeral,
+          });
+        }
         if (baseUrl && !/^https?:\/\//i.test(baseUrl)) {
           return interaction.reply({
             embeds: [errorEmbed('`base_url` has to start with `http://` or `https://`.')],
             ...ephemeral,
           });
         }
-        settings.setProvider({
-          apiKey: interaction.options.getString('api_key'),
-          model: interaction.options.getString('model'),
-          provider: interaction.options.getString('provider'),
-          baseUrl,
-        });
+        settings.setProvider({ apiKey, model, provider, baseUrl });
         return interaction.reply({
           embeds: [
             simpleEmbed(
               COLORS.success,
-              '✅ AI brain connected — it works from the very next `/ask`, no restart needed.\n' +
+              `✅ ${apiKey ? 'AI brain connected' : 'Settings updated'} — live from the very next \`/ask\`, no restart needed.\n` +
                 `• **Provider:** ${settings.provider}\n` +
                 `• **Base URL:** ${settings.baseUrl}\n` +
                 `• **Model:** ${settings.model}\n` +
