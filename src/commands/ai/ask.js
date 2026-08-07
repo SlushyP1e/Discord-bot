@@ -108,7 +108,14 @@ export default {
         });
       }
       console.error('AI request failed:', err.message);
-      return interaction.editReply({ embeds: [errorEmbed(failureMessage(err))] });
+      let text = failureMessage(err);
+      // The owner is the only one who can act on a provider error, and the only
+      // one it's safe to show, so they get the real message instead of a trip
+      // to the container logs.
+      if (isOwner(ctx, interaction.user.id) && err.detail) {
+        text += `\n\n**Provider said:**\n\`\`\`\n${err.detail.slice(0, 900)}\n\`\`\``;
+      }
+      return interaction.editReply({ embeds: [errorEmbed(text)] });
     }
 
     // Only remember exchanges that actually completed.
