@@ -20,12 +20,14 @@ export class NoApiKeyError extends Error {
 
 /** Any failed AI request: HTTP error, timeout, or an unusable response body. */
 export class AIRequestError extends Error {
-  constructor(message, { status, reason } = {}) {
+  constructor(message, { status, reason, detail } = {}) {
     super(message);
     this.name = 'AIRequestError';
     this.status = status;
     /** A non-HTTP failure kind, e.g. 'length' when the token cap ran out. */
     this.reason = reason;
+    /** The provider's own error text. Shown to the owner, never to anyone else. */
+    this.detail = detail;
   }
 }
 
@@ -35,6 +37,23 @@ export class AIRequestError extends Error {
  *   https://api.openai.com/v1/        → https://api.openai.com/v1/chat/completions
  *   https://x.dev/v1/chat/completions → unchanged (already an endpoint)
  */
+/**
+ * Dig the human-readable message out of a provider's error body.
+ * They mostly use `{"error": {"message": "..."}}`, but not all of them, so the
+ * raw text is the fallback.
+ */
+export function extractProviderMessage(body) {
+  if (!body) return null;
+  try {
+    const parsed = JSON.parse(body);
+    const message = parsed?.error?.message ?? parsed?.message ?? parsed?.error;
+    if (typeof message === 'string' && message.trim()) return message.trim().slice(0, 400);
+  } catch {
+    // Not JSON — fall through to the raw text.
+  }
+  return String(body).trim().slice(0, 400) || null;
+}
+
 export function buildEndpoint(baseUrl) {
   const trimmed = (baseUrl || '').trim().replace(/\/+$/, '');
   if (/\/chat\/completions$/.test(trimmed)) return trimmed;
@@ -104,6 +123,7 @@ export function createAiClient(settings, defaults = {}) {
       } catch { /* body already consumed or unreadable */ }
       throw new AIRequestError(`AI provider returned HTTP ${res.status}: ${detail}`, {
         status: res.status,
+        detail: extractProviderMessage(detail),
       });
     }
 

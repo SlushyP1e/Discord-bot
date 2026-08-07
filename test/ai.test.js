@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createDatabase } from '../src/db/database.js';
 import { AiSettings, checkAiAccess } from '../src/ai/settings.js';
-import { buildEndpoint, thinkingField } from '../src/ai/client.js';
+import { buildEndpoint, thinkingField, extractProviderMessage } from '../src/ai/client.js';
 import { buildRequestBody, isReasoningModel, REASONING_MIN_TOKENS } from '../src/ai/dialect.js';
 import { buildSystemPrompt, GUARDRAILS } from '../src/ai/persona.js';
 import { createConversationStore } from '../src/ai/context.js';
@@ -93,6 +93,20 @@ test('the request body is shaped for the model dialect', () => {
   });
   assert.deepEqual(deepseek.thinking, { type: 'disabled' });
   assert.equal(deepseek.max_tokens, 400);
+});
+
+test('a provider error message is dug out for the owner to act on', () => {
+  assert.equal(
+    extractProviderMessage('{"error":{"message":"Unsupported parameter: \'temperature\'"}}'),
+    "Unsupported parameter: 'temperature'",
+  );
+  assert.equal(extractProviderMessage('{"message":"bad key"}'), 'bad key');
+  // Not every provider returns JSON.
+  assert.equal(extractProviderMessage('502 Bad Gateway'), '502 Bad Gateway');
+  assert.equal(extractProviderMessage(''), null);
+  assert.equal(extractProviderMessage(undefined), null);
+  // Long bodies are truncated rather than blowing the embed limit.
+  assert.equal(extractProviderMessage(`{"error":{"message":"${'x'.repeat(900)}"}}`).length, 400);
 });
 
 test('settings fall back to env defaults until the owner overrides them', () => {
