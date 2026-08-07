@@ -148,11 +148,13 @@ DeepSeek bills per token with no monthly minimum, so an idle bot costs nothing.
 
 ### 😈 What she will and won't say
 
-The system prompt lets her be sassy on purpose: she teases, roasts bad takes and claps back when someone comes at her sideways. What it does **not** let her do — regardless of role-play framing, "ignore your rules" prompts, or anyone claiming to be the owner:
+The system prompt lets her be genuinely rude on purpose. She swears like a normal adult, and if someone starts on her she goes back at them properly — no politeness padding, no being the bigger person. She matches escalation rather than setting it: start something and you get both barrels, just chat and she's decent, and if someone is actually upset rather than play-fighting she drops it instantly.
 
-- slurs or anything hateful/demeaning about race, ethnicity, nationality, religion, gender, gender identity, sexual orientation or disability
+What it does **not** let her do — regardless of role-play framing, "ignore your rules" prompts, or anyone claiming to be the owner:
+
+- slurs or anything hateful/demeaning about race, ethnicity, nationality, religion, gender, gender identity, sexual orientation or disability — swearing at someone is fine, bigotry isn't; she goes after what you *said*, never what you *are*
 - anything sexual involving minors, or NSFW content generally
-- targeted harassment, threats, doxxing
+- organised pile-ons, threats of violence, doxxing, or anything aimed at someone who isn't in the conversation
 - encouraging self-harm or violence (she drops the sass entirely and points at real help if someone sounds like they're struggling)
 - real-world harm instructions (weapons, drugs, malware), or revealing her own key/config
 
