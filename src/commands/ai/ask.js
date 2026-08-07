@@ -6,6 +6,7 @@ import { checkAiAccess } from '../../ai/settings.js';
 import { buildSystemPrompt } from '../../ai/persona.js';
 import { NoApiKeyError, AIRequestError } from '../../ai/client.js';
 import { formatUsage } from '../../ai/usage.js';
+import { buildUserContent, historyText, isSupportedImage } from '../../ai/vision.js';
 import { isOwner } from '../../utils/owner.js';
 
 // AI calls cost the owner money, so /ask gets a longer leash than the 3s
@@ -13,13 +14,15 @@ import { isOwner } from '../../utils/owner.js';
 const ASK_COOLDOWN_MS = 8000;
 
 /** A friendly, in-character message for whatever went wrong upstream. */
-function failureMessage(err) {
+function failureMessage(err, { hasImages = false } = {}) {
   if (err instanceof AIRequestError) {
     if (err.reason === 'length') {
       return 'I ran out of room thinking that one through 🫠 My owner can raise `AI_MAX_TOKENS`.';
     }
     if (err.status === 400) {
-      return "My provider didn't like that request 🤨 My owner should check the model name in `/aiconfig status`.";
+      return hasImages
+        ? "My provider didn't like that request 🤨 This model might not be able to see images."
+        : "My provider didn't like that request 🤨 My owner should check the model name in `/aiconfig status`.";
     }
     if (err.status === 401 || err.status === 403) {
       return 'My AI key got rejected 🔑 My owner needs to run `/aiconfig key` again.';
@@ -45,6 +48,9 @@ export default {
         .setDescription('What do you want to ask?')
         .setRequired(true)
         .setMaxLength(1000),
+    )
+    .addAttachmentOption((o) =>
+      o.setName('image').setDescription('An image for me to look at (png, jpg, webp or gif)'),
     )
     .addBooleanOption((o) =>
       o.setName('fresh').setDescription('Forget our previous messages and start a new chat'),
@@ -83,6 +89,14 @@ export default {
     }
 
     const question = interaction.options.getString('question').trim();
+    const attachment = interaction.options.getAttachment('image');
+    if (attachment && !isSupportedImage(attachment)) {
+      return interaction.reply({
+        embeds: [errorEmbed("I can only look at png, jpg, webp or gif files under 20 MB 🖼️")],
+        flags: MessageFlags.Ephemeral,
+      });
+    }
+    const images = attachment ? [attachment] : [];
     const ephemeral = interaction.options.getBoolean('private') ?? false;
     const channelId = interaction.channelId;
     const userId = interaction.user.id;
@@ -94,7 +108,7 @@ export default {
     const messages = [
       { role: 'system', content: buildSystemPrompt(ctx.aiSettings.persona) },
       ...ctx.conversations.get(channelId, userId),
-      { role: 'user', content: question },
+      { role: 'user', content: buildUserContent(question, images) },
     ];
 
     let answer;
@@ -108,7 +122,7 @@ export default {
         });
       }
       console.error('AI request failed:', err.message);
-      let text = failureMessage(err);
+      let text = failureMessage(err, { hasImages: images.length > 0 });
       // The owner is the only one who can act on a provider error, and the only
       // one it's safe to show, so they get the real message instead of a trip
       // to the container logs.
@@ -118,8 +132,9 @@ export default {
       return interaction.editReply({ embeds: [errorEmbed(text)] });
     }
 
-    // Only remember exchanges that actually completed.
-    ctx.conversations.push(channelId, userId, 'user', question);
+    // Only remember exchanges that actually completed. The image itself is not
+    // kept — see src/ai/vision.js for why.
+    ctx.conversations.push(channelId, userId, 'user', historyText(question, images.length));
     ctx.conversations.push(channelId, userId, 'assistant', answer);
 
     const chunks = splitText(answer);

@@ -5,6 +5,7 @@ import { checkAiAccess } from '../ai/settings.js';
 import { buildSystemPrompt } from '../ai/persona.js';
 import { isTalkingToBot, stripBotMention } from '../ai/mention.js';
 import { splitText } from '../utils/split.js';
+import { buildUserContent, historyText, pickImages } from '../ai/vision.js';
 import { isOwner } from '../utils/owner.js';
 
 // Chat by @mentioning the bot or replying to one of its messages — the same
@@ -109,7 +110,9 @@ export default {
       if (!ctx.aiSettings.hasApiKey()) return skip('no API key is configured (/aiconfig key)');
 
       const text = stripBotMention(message.content, botId);
-      if (!text) {
+      const images = pickImages(message.attachments);
+      // A picture with no caption is still worth answering.
+      if (!text && !images.length) {
         return skip(
           message.content
             ? 'nothing was left after removing my mention'
@@ -128,7 +131,7 @@ export default {
       const messages = [
         { role: 'system', content: buildSystemPrompt(ctx.aiSettings.persona) },
         ...ctx.conversations.get(channelId, userId),
-        { role: 'user', content: text },
+        { role: 'user', content: buildUserContent(text, images) },
       ];
 
       let answer;
@@ -142,7 +145,7 @@ export default {
         return;
       }
 
-      ctx.conversations.push(channelId, userId, 'user', text);
+      ctx.conversations.push(channelId, userId, 'user', historyText(text, images.length));
       ctx.conversations.push(channelId, userId, 'assistant', answer);
 
       // Plain text rather than an embed — this is a conversation, not a command.

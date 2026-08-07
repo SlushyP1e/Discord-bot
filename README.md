@@ -31,6 +31,7 @@ A lovable, Nekotina-style Discord bot packed with love & reaction commands, marr
 `/ask <question>` — ask SlushyLove anything and get an actual answer, in her own voice: dry, quick and happy to snap back at you. Powered by **DeepSeek** by default (or any OpenAI-compatible provider).
 
 - Or just **@mention her / reply to her messages** and she answers in the channel like a normal conversation — same brain, same memory, same rules. Off by default: it needs a privileged intent, see [below](#-chatting-by-mention).
+- **She can see images.** Attach one to `/ask` with the `image` option, or post a picture while @mentioning her — a caption is optional. Needs a vision-capable model (`gpt-5-nano` is; check yours). Roughly 600–700 input tokens per image, so a few thousandths of a cent each.
 - Remembers the last few messages of your conversation for ~15 minutes, so follow-ups work. `fresh: true` starts over, `private: true` keeps the answer to yourself.
 - Every answer shows its token usage in the footer — `🪙 1,234 in · 210 out · 1,088 cached — 1,444 tokens` — so you can watch what a conversation actually costs. `cached` is prompt tokens the provider served from its cache at a fraction of the price; `thinking` (reasoning models only) is hidden reasoning you don't see but do pay for.
 - Nothing anyone says to `/ask` is written to disk — that memory is in RAM only and vanishes on restart.
@@ -142,6 +143,7 @@ The defaults are already tuned for the cheapest sensible setup, and a few dollar
 - **Prompt caching is free money.** The system prompt is identical on every request and always sits first, so DeepSeek serves it as a cache hit — dramatically cheaper than a fresh read. Changing `/aiconfig persona` invalidates that until the new prompt warms up again.
 - **`AI_MAX_TOKENS=400`** caps the worst-case reply. Lower it to ~250 if you want her permanently terse.
 - **`AI_MEMORY_TURNS=8`** controls how much history is resent each time. Drop it to `4` (or `0` for no memory) to cut input tokens.
+- **Images cost input tokens, once.** An image is sent only on the turn it arrives; the conversation memory keeps `[sent an image]` in its place. Follow-up questions about the same picture therefore don't pay for it again — which also avoids Discord's signed CDN links expiring out from under a stored conversation.
 - **Volume controls:** the server allow-list plus the 8-second per-user cooldown are your real spend limits. Keep `/ask` on servers you trust, and `/aiconfig disallow` is an instant off switch. `/aiconfig clearkey` is the kill switch.
 
 DeepSeek bills per token with no monthly minimum, so an idle bot costs nothing.
