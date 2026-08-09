@@ -8,7 +8,7 @@ import { buildSystemPrompt, GUARDRAILS } from '../src/ai/persona.js';
 import { createConversationStore } from '../src/ai/context.js';
 import { isTalkingToBot, stripBotMention } from '../src/ai/mention.js';
 import { normalizeUsage, formatUsage } from '../src/ai/usage.js';
-import { splitText } from '../src/utils/split.js';
+import { splitText, truncate } from '../src/utils/split.js';
 
 const DEFAULTS = {
   provider: 'deepseek',
@@ -293,6 +293,20 @@ test('token usage is normalised across providers and formatted for the footer', 
     assert.equal(normalizeUsage(empty), null);
   }
   assert.equal(formatUsage(null), null);
+});
+
+test('the echoed question is cut to length rather than filling the message', () => {
+  assert.equal(truncate('what is tuna', 200), 'what is tuna');
+  assert.equal(truncate('', 200), '');
+  assert.equal(truncate(null, 200), '');
+
+  const long = 'x'.repeat(500);
+  const cut = truncate(long, 200);
+  assert.equal(cut.length, 200);
+  assert.ok(cut.endsWith('…'));
+
+  // Trailing space before the ellipsis is tidied away.
+  assert.equal(truncate('hello world there', 12), 'hello world…');
 });
 
 test('long answers split on natural boundaries without losing text', () => {
