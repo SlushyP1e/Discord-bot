@@ -2,6 +2,12 @@
 // paragraph, then a line, then a word — so we never truncate an answer and
 // rarely cut mid-word.
 
+/** Shorten to `maxLen` characters, ending in an ellipsis when it had to cut. */
+export function truncate(text, maxLen) {
+  if (!text || text.length <= maxLen) return text ?? '';
+  return `${text.slice(0, maxLen - 1).trimEnd()}…`;
+}
+
 /**
  * @param {string} text
  * @param {number} [maxLen] defaults to the embed description limit.
