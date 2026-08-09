@@ -1,5 +1,5 @@
-import { InteractionContextType, MessageFlags, SlashCommandBuilder, escapeMarkdown } from 'discord.js';
-import { errorEmbed } from '../../utils/embeds.js';
+import { EmbedBuilder, InteractionContextType, MessageFlags, SlashCommandBuilder } from 'discord.js';
+import { COLORS, errorEmbed } from '../../utils/embeds.js';
 import { splitText, truncate } from '../../utils/split.js';
 import { checkCooldown } from '../../utils/cooldowns.js';
 import { checkAiAccess } from '../../ai/settings.js';
@@ -13,11 +13,8 @@ import { isOwner } from '../../utils/owner.js';
 // global command cooldown.
 const ASK_COOLDOWN_MS = 8000;
 
-const DISCORD_MESSAGE_LIMIT = 2000;
-// How much of the question is echoed back above the answer.
-const QUESTION_PREVIEW = 200;
-// Replies are plain text now, so the model's output could otherwise ping people.
-const NO_PINGS = { parse: [] };
+// How much of the question is echoed back in the footer.
+const QUESTION_PREVIEW = 180;
 
 /** A friendly, in-character message for whatever went wrong upstream. */
 function failureMessage(err, { hasImages = false } = {}) {
@@ -151,29 +148,25 @@ export default {
     ctx.conversations.push(channelId, userId, 'user', historyText(question, images.length));
     ctx.conversations.push(channelId, userId, 'assistant', answer);
 
-    // A plain message rather than an embed: it reads like a conversation, and
-    // code blocks and links behave the way people expect. Escaped so a name or
-    // a question full of markdown can't mangle the layout.
-    const asker = escapeMarkdown(interaction.user.displayName);
-    const asked = escapeMarkdown(truncate(question, QUESTION_PREVIEW));
-    const usageLine = formatUsage(usage);
+    // Embeds can't ping anyone whatever the model writes, and markdown doesn't
+    // render in the author line or footer, so neither needs escaping.
+    const chunks = splitText(answer);
+    const first = new EmbedBuilder()
+      .setColor(COLORS.love)
+      .setAuthor({
+        name: `${interaction.user.displayName} asked...`,
+        iconURL: interaction.user.displayAvatarURL({ size: 64 }),
+      })
+      .setDescription(chunks[0])
+      // The question, and what it cost in tokens when the provider says.
+      .setFooter({
+        text: [`💭 ${truncate(question, QUESTION_PREVIEW)}`, formatUsage(usage)].filter(Boolean).join('\n'),
+      });
 
-    const body = [
-      `**${asker} asked;** ${asked}`,
-      answer,
-      // Subtext, so the token count sits quietly under the answer.
-      usageLine ? `-# ${usageLine}` : null,
-    ]
-      .filter(Boolean)
-      .join('\n');
-
-    // Split the whole thing, header included, so no chunk can exceed the limit.
-    const chunks = splitText(body, DISCORD_MESSAGE_LIMIT);
-    await interaction.editReply({ content: chunks[0], allowedMentions: NO_PINGS });
+    await interaction.editReply({ embeds: [first] });
     for (const chunk of chunks.slice(1)) {
       await interaction.followUp({
-        content: chunk,
-        allowedMentions: NO_PINGS,
+        embeds: [new EmbedBuilder().setColor(COLORS.love).setDescription(chunk)],
         ...(ephemeral ? { flags: MessageFlags.Ephemeral } : {}),
       });
     }
