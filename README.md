@@ -184,6 +184,8 @@ docker compose up -d --build
 docker compose logs -f   # look for "Logged in as SlushyLove#..."
 ```
 
+The image ships with a built-in **healthcheck**: the container serves `GET /healthz` on port 3000 internally and Docker marks it unhealthy if that stops answering — so NAS dashboards show real status, and `docker ps` tells a hung bot from a live one at a glance.
+
 ### 2b. Run on ZimaOS (or CasaOS)
 
 ZimaOS installs apps from a compose file but can't build one from source, so the bot ships as a prebuilt image.

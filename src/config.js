@@ -22,6 +22,10 @@ export const config = {
   // Optional override for who can block GIFs. Defaults to the Discord app owner.
   ownerId: process.env.OWNER_ID || null,
   dataDir: process.env.DATA_DIR || './data',
+  // When set (e.g. HEALTH_PORT=3000), a tiny HTTP server answers GET
+  // /healthz — used by Docker's HEALTHCHECK and container orchestrators.
+  // 0 disables it.
+  healthPort: num(process.env.HEALTH_PORT, 0),
   // Defaults for the /ask brain. Everything here can be overridden at runtime
   // by the owner with /aiconfig, which persists to the database.
   ai: {

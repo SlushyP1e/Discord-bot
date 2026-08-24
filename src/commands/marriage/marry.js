@@ -57,6 +57,9 @@ export default {
   },
 };
 
+/** How long the Yes/No buttons stay valid after a proposal is posted. */
+const PROPOSAL_WINDOW_MS = 15 * 60_000;
+
 /** Handles the Yes/No buttons on a proposal. */
 export async function handleMarriageButton(interaction, ctx) {
   const [, choice, proposerId, targetId] = interaction.customId.split(':');
@@ -64,6 +67,16 @@ export async function handleMarriageButton(interaction, ctx) {
   if (interaction.user.id !== targetId) {
     return interaction.reply({
       embeds: [errorEmbed('This proposal isn\'t for you! 👀')],
+      flags: MessageFlags.Ephemeral,
+    });
+  }
+
+  // Stale proposals die quietly: buttons come off the message, and only the
+  // target gets told why (same pattern as the "hug back" window).
+  if (Date.now() - interaction.message.createdTimestamp > PROPOSAL_WINDOW_MS) {
+    await interaction.update({ components: [] });
+    return interaction.followUp({
+      embeds: [errorEmbed('This proposal expired — pop the question again! 💍')],
       flags: MessageFlags.Ephemeral,
     });
   }
@@ -78,16 +91,15 @@ export async function handleMarriageButton(interaction, ctx) {
     return interaction.update({ content: '', embeds: [embed], components: [] });
   }
 
-  // Re-check both sides — things may have changed while the proposal sat there.
-  if (marriages.get(interaction.guildId, proposerId) || marriages.get(interaction.guildId, targetId)) {
+  // marry() is atomic: it returns false when one of you married someone else
+  // while this proposal sat there — which also covers two clicks racing.
+  if (!marriages.marry(interaction.guildId, proposerId, targetId)) {
     return interaction.update({
       content: '',
       embeds: [errorEmbed('One of you got married while this proposal was pending. Drama! 🍿')],
       components: [],
     });
   }
-
-  marriages.marry(interaction.guildId, proposerId, targetId);
   const embed = new EmbedBuilder()
     .setColor(COLORS.love)
     .setTitle('🎉 Just married!')

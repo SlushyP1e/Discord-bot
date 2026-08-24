@@ -8,6 +8,7 @@ import { GifService, headValidate } from './gif/gifService.js';
 import { AiSettings } from './ai/settings.js';
 import { createAiClient } from './ai/client.js';
 import { createConversationStore } from './ai/context.js';
+import { startHealthServer } from './health.js';
 
 if (!config.token) {
   console.error('❌ DISCORD_TOKEN is not set. Copy .env.example to .env and add your bot token.');
@@ -32,6 +33,11 @@ if (config.ai.mentionChat) {
 
 const client = new Client({ intents, partials });
 client.commands = new Collection();
+
+if (config.healthPort) {
+  startHealthServer({ port: config.healthPort, client }).unref();
+  console.log(`🩺 Health endpoint listening on :${config.healthPort}/healthz`);
+}
 
 const db = createDatabase(dbPath);
 const aiSettings = new AiSettings({ repo: db.ai, defaults: config.ai });
@@ -96,14 +102,22 @@ for (const file of readdirSync(eventsDir)) {
   else client.on(event.name, (...args) => event.execute(...args, ctx));
 }
 
-function shutdown(signal) {
+function shutdown(signal, code = 0) {
   console.log(`\n${signal} received — shutting down gracefully 💤`);
   client.destroy();
   ctx.db.close();
-  process.exit(0);
+  process.exit(code);
 }
 process.on('SIGINT', () => shutdown('SIGINT'));
 process.on('SIGTERM', () => shutdown('SIGTERM'));
+// A stray rejected promise somewhere shouldn't take the whole bot down — log
+// it and carry on. A genuinely broken state (uncaughtException) is different:
+// shut down cleanly rather than limp along.
+process.on('unhandledRejection', (err) => console.error('Unhandled rejection:', err));
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught exception — shutting down:', err);
+  shutdown('uncaughtException', 1);
+});
 
 client.login(config.token).catch((err) => {
   console.error('❌ Failed to log in to Discord:', err.message);

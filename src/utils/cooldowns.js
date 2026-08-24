@@ -17,3 +17,8 @@ export function checkCooldown(userId, commandName, ms = 3000) {
   }
   return 0;
 }
+
+/** Clears an armed cooldown, e.g. when the command failed before doing work. */
+export function resetCooldown(userId, commandName) {
+  lastUsed.delete(`${userId}:${commandName}`);
+}

@@ -103,9 +103,17 @@ export class AiSettings {
     return Boolean(this.getApiKey());
   }
 
-  /** True when the key currently in use is encrypted at rest. */
+  /** True when the key currently stored is encrypted at rest — decided by the
+   * envelope's own flag, not by whether CONFIG_SECRET happens to be set now
+   * (it may have been added after a plaintext key was saved). */
   get keyEncrypted() {
-    return Boolean(this.secret) && Boolean(this.repo.getSetting(KEYS.apiKey));
+    const stored = this.repo.getSetting(KEYS.apiKey);
+    if (!stored) return false;
+    try {
+      return JSON.parse(stored)?.enc === true;
+    } catch {
+      return false; // a bare string written outside packKey()
+    }
   }
 
   /** Only defined, non-empty fields are changed. */

@@ -40,6 +40,9 @@ export async function headValidate(url, { fetchFn = globalThis.fetch, timeoutMs 
  * - Tries providers in priority order; each request has a hard timeout.
  * - Circuit breaker: a provider that fails `failureThreshold` times in a row
  *   is skipped for `cooldownMs`, then given another chance.
+ * - A hard time `budgetMs` caps how long we'll keep trying providers before
+ *   falling back to the cache — so a run of slow failures can't stall a
+ *   deferred interaction for half a minute.
  * - Every successful GIF URL is remembered per category; if every provider is
  *   down, a cached URL is served so the bot keeps working during full outages.
  */
@@ -59,6 +62,11 @@ export class GifService {
     // Optional async (url) => boolean liveness check. When set, GIFs that fail
     // it are skipped like blocked ones, so a dead link never reaches Discord.
     validateUrl = null,
+    // A passed liveness check is remembered per URL for this long, so repeat
+    // requests skip the extra round-trip. 0 re-validates every time.
+    validationTtlMs = 10 * 60_000,
+    // Ceiling on total provider-hunting time per getGif() call.
+    budgetMs = 8_000,
   } = {}) {
     this.providers = providers;
     this.fetchFn = fetchFn;
@@ -70,8 +78,12 @@ export class GifService {
     this.isBlockedAnime = isBlockedAnime;
     this.blockedRetries = blockedRetries;
     this.validateUrl = validateUrl;
+    this.validationTtlMs = validationTtlMs;
+    this.budgetMs = budgetMs;
     this.state = new Map(providers.map((p) => [p.name, { failures: 0, downUntil: 0 }]));
     this.cache = new Map();
+    /** @type {Map<string, number>} url → timestamp until which it's known live */
+    this.validatedUntil = new Map();
   }
 
   supports(category) {
@@ -84,15 +96,28 @@ export class GifService {
 
   async #isUsable(entry) {
     if (this.#isBlocked(entry)) return false;
-    if (this.validateUrl && !(await this.validateUrl(entry.url))) return false;
+    if (!this.validateUrl) return true;
+    // A URL that passed recently doesn't need proving again.
+    const okUntil = this.validatedUntil.get(entry.url);
+    if (okUntil !== undefined) {
+      if (okUntil > Date.now()) return true;
+      this.validatedUntil.delete(entry.url);
+    }
+    if (!(await this.validateUrl(entry.url))) return false;
+    if (this.validationTtlMs > 0) {
+      this.validatedUntil.set(entry.url, Date.now() + this.validationTtlMs);
+    }
     return true;
   }
 
   /** @returns {Promise<{url: string, anime?: string, provider: string} | null>} never throws */
   async getGif(category) {
+    const deadline = Date.now() + this.budgetMs;
     for (const provider of this.providers) {
       const mapped = provider.map[category];
       if (!mapped) continue;
+      // Past the time budget? Stop shopping and fall through to the cache.
+      if (Date.now() >= deadline) break;
 
       const state = this.state.get(provider.name);
       if (state.downUntil > Date.now()) continue;
@@ -100,6 +125,7 @@ export class GifService {
       // Retry the same provider a few times if it hands back a blocked GIF,
       // before falling through to the next provider.
       for (let attempt = 0; attempt < this.blockedRetries; attempt++) {
+        if (Date.now() >= deadline) break;
         let entry;
         try {
           const res = await this.fetchFn(provider.url(mapped), {
@@ -129,9 +155,8 @@ export class GifService {
     }
 
     // Last resort: a cached GIF, skipping anything blocked or now dead.
-    const cached = (this.cache.get(category) ?? []).filter((e) => !this.#isBlocked(e));
-    for (const pick of shuffle(cached)) {
-      if (this.validateUrl && !(await this.validateUrl(pick.url))) continue;
+    for (const pick of shuffle(this.cache.get(category) ?? [])) {
+      if (!(await this.#isUsable(pick))) continue;
       return { url: pick.url, anime: pick.anime, provider: 'cache' };
     }
     return null;

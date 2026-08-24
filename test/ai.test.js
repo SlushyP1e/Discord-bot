@@ -155,6 +155,24 @@ test('the API key is encrypted at rest when CONFIG_SECRET is set', () => {
   db.close();
 });
 
+test('keyEncrypted reflects how the key was stored, not the current config', () => {
+  const { db, settings } = makeSettings(); // no CONFIG_SECRET
+
+  // No key at all -> not encrypted, and not a lie about it either.
+  assert.equal(settings.keyEncrypted, false);
+
+  // Saved while unencrypted: stays truthful even after a secret is configured.
+  settings.setProvider({ apiKey: 'sk-plain' });
+  const later = new AiSettings({ repo: db.ai, defaults: { ...DEFAULTS, secret: 'hunter2' } });
+  assert.equal(later.keyEncrypted, false, 'a plaintext row must not be reported as encrypted');
+  assert.ok(db.ai.getSetting('api_key').includes('sk-plain'));
+
+  // Re-saving under the secret encrypts it for real.
+  later.setProvider({ apiKey: 'sk-round-two' });
+  assert.equal(later.keyEncrypted, true);
+  db.close();
+});
+
 test('only allow-listed servers (and the owner) can use the AI', () => {
   const { db, settings } = makeSettings();
 

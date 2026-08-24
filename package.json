@@ -6,7 +6,9 @@
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
-    "test": "node --test"
+    "test": "node --test",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
   },
   "engines": {
     "node": ">=20"
@@ -15,5 +17,9 @@
   "dependencies": {
     "better-sqlite3": "^12.2.0",
     "discord.js": "^14.21.0"
+  },
+  "devDependencies": {
+    "eslint": "^9.39.5",
+    "globals": "^15.15.0"
   }
 }

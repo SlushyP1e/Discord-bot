@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { GifService, headValidate } from '../src/gif/gifService.js';
 
-function makeProvider(name, urls = {}) {
+function makeProvider(name, _urls = {}) {
   return {
     name,
     map: { hug: 'hug' },
@@ -185,6 +185,9 @@ test('skips a dead cached GIF in the last-resort fallback', async () => {
   let live = true;
   const service = new GifService({
     providers: [makeProvider('only')],
+    // Re-validate every time, so this checks the strict path — with the
+    // default validation cache the just-verified URL would be trusted.
+    validationTtlMs: 0,
     validateUrl: async (u) => (u === 'https://cdn/cached.gif' ? live : true),
     fetchFn: (() => {
       let n = 0;
@@ -242,4 +245,64 @@ test('real provider maps cover every command category', () => {
   for (const cat of categories) {
     assert.ok(service.supports(cat), `no provider supports category "${cat}"`);
   }
+});
+
+test('a passed liveness check is remembered per URL (validation cache)', async () => {
+  let validations = 0;
+  const service = new GifService({
+    providers: [makeProvider('only')],
+    validateUrl: async () => {
+      validations += 1;
+      return true;
+    },
+    // Same URL every time — that's the case the cache exists for.
+    fetchFn: async () => okResponse('https://cdn/same.gif'),
+  });
+
+  await service.getGif('hug');
+  await service.getGif('hug');
+  assert.equal(validations, 1, 'the second request must reuse the cached verdict');
+
+  // An expired verdict gets re-proven.
+  service.validatedUntil.set('https://cdn/same.gif', Date.now() - 1);
+  await service.getGif('hug');
+  assert.equal(validations, 2);
+});
+
+test('validationTtlMs: 0 re-validates on every request', async () => {
+  let validations = 0;
+  const service = new GifService({
+    providers: [makeProvider('only')],
+    validationTtlMs: 0,
+    validateUrl: async () => {
+      validations += 1;
+      return true;
+    },
+    fetchFn: async () => okResponse('https://cdn/same.gif'),
+  });
+
+  await service.getGif('hug');
+  await service.getGif('hug');
+  assert.equal(validations, 2);
+});
+
+test('stops hunting providers once the time budget runs out', async () => {
+  const slowFail = async () => {
+    await new Promise((r) => setTimeout(r, 20));
+    throw new Error('down');
+  };
+  let backupCalled = false;
+  const service = new GifService({
+    providers: [makeProvider('slow1'), makeProvider('backup')],
+    budgetMs: 10,
+    fetchFn: async (url) => {
+      if (url.startsWith('https://backup/')) backupCalled = true;
+      return slowFail();
+    },
+  });
+
+  // Both providers are too slow for the budget: no provider answer, and the
+  // second one isn't even attempted. Cache is empty -> null.
+  assert.equal(await service.getGif('hug'), null);
+  assert.equal(backupCalled, false, 'past the budget, later providers must be skipped');
 });

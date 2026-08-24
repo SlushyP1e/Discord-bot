@@ -18,6 +18,9 @@ import { isOwner } from '../utils/owner.js';
 // is worse than one that says nothing.
 
 const MENTION_COOLDOWN_MS = 8000;
+// One AI reply per channel per window, whoever asks — so a person with two
+// accounts (or a busy channel) can't stack several provider calls at once.
+const CHANNEL_COOLDOWN_MS = 5000;
 const DISCORD_MESSAGE_LIMIT = 2000;
 
 // Never let the model's output ping anyone, whatever it writes.
@@ -120,6 +123,12 @@ export default {
         );
       }
 
+      // Channel budget first: if the channel is throttled we bow out without
+      // touching the user's own cooldown, so nobody burns it on a queue.
+      if (checkCooldown(message.channelId, 'mention-channel', CHANNEL_COOLDOWN_MS) > 0) {
+        message.react('⏳').catch(() => {});
+        return;
+      }
       // Shared with /ask, so one person can't get two budgets by switching.
       if (checkCooldown(message.author.id, 'ask:ai', MENTION_COOLDOWN_MS) > 0) {
         message.react('⏳').catch(() => {});
@@ -145,15 +154,17 @@ export default {
         return;
       }
 
-      ctx.conversations.push(channelId, userId, 'user', historyText(text, images.length));
-      ctx.conversations.push(channelId, userId, 'assistant', answer);
-
       // Plain text rather than an embed — this is a conversation, not a command.
       const chunks = splitText(answer, DISCORD_MESSAGE_LIMIT);
       await message.reply({ content: chunks[0], allowedMentions: NO_PINGS });
       for (const chunk of chunks.slice(1)) {
         await message.channel.send({ content: chunk, allowedMentions: NO_PINGS });
       }
+
+      // Remembered only once delivery actually worked — a failed send must
+      // never leave the bot convinced it said something it didn't.
+      ctx.conversations.push(channelId, userId, 'user', historyText(text, images.length));
+      ctx.conversations.push(channelId, userId, 'assistant', answer);
     } catch (err) {
       console.error('messageCreate error:', err);
     }

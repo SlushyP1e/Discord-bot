@@ -19,7 +19,7 @@ export const REASONING_MIN_TOKENS = 1200;
  * served under prefixed names by proxies (`openai/gpt-5-nano` on OpenRouter).
  */
 export function isReasoningModel(model) {
-  return /(?:^|\/)(?:gpt-5|o[1345])(?:[.\-]|$)/i.test((model ?? '').trim());
+  return /(?:^|\/)(?:gpt-5|o[1345])(?:[.-]|$)/i.test((model ?? '').trim());
 }
 
 /**

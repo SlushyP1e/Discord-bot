@@ -47,6 +47,24 @@ test('marriage lifecycle: marry, lookup from both sides, divorce', () => {
   db.close();
 });
 
+test('marry is atomic: refuses when either partner is already married', () => {
+  const db = createDatabase(':memory:');
+
+  assert.equal(db.marriages.marry(G, 'alice', 'bob'), true);
+  // Either side proposing to someone else loses the race.
+  assert.equal(db.marriages.marry(G, 'alice', 'carol'), false);
+  assert.equal(db.marriages.marry(G, 'dave', 'bob'), false);
+  assert.ok(db.marriages.get(G, 'alice'), 'original marriage intact');
+
+  // After a divorce the same pair can remarry.
+  db.marriages.divorce(G, 'alice');
+  assert.equal(db.marriages.marry(G, 'bob', 'alice'), true);
+
+  // Other guilds are unaffected by who's married where.
+  assert.equal(db.marriages.marry('guild2', 'alice', 'carol'), true);
+  db.close();
+});
+
 test('blocklist blocks gifs (idempotent) and anime (case-insensitive)', () => {
   const db = createDatabase(':memory:');
 

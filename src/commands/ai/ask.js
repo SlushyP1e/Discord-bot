@@ -83,14 +83,6 @@ export default {
       });
     }
 
-    const remaining = checkCooldown(interaction.user.id, 'ask:ai', ASK_COOLDOWN_MS);
-    if (remaining > 0) {
-      return interaction.reply({
-        embeds: [errorEmbed(`Let me catch my breath! Ask again in **${(remaining / 1000).toFixed(1)}s** 🧠💨`)],
-        flags: MessageFlags.Ephemeral,
-      });
-    }
-
     const question = (interaction.options.getString('question') ?? '').trim();
     const attachment = interaction.options.getAttachment('image');
     if (attachment && !isSupportedImage(attachment)) {
@@ -105,6 +97,15 @@ export default {
     if (!question && !images.length) {
       return interaction.reply({
         embeds: [errorEmbed('You have to actually ask me something 🙄')],
+        flags: MessageFlags.Ephemeral,
+      });
+    }
+    // Armed only after the input above validates, so a typo doesn't burn an
+    // 8s lockout on top of the error.
+    const remaining = checkCooldown(interaction.user.id, 'ask:ai', ASK_COOLDOWN_MS);
+    if (remaining > 0) {
+      return interaction.reply({
+        embeds: [errorEmbed(`Let me catch my breath! Ask again in **${(remaining / 1000).toFixed(1)}s** 🧠💨`)],
         flags: MessageFlags.Ephemeral,
       });
     }
