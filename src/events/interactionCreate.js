@@ -6,6 +6,7 @@ import { handleMarriageButton } from '../commands/marriage/marry.js';
 import { handleDivorceButton } from '../commands/marriage/divorce.js';
 import { handleHelpMenu } from '../commands/util/help.js';
 import { handleFixButton } from '../commands/util/fix.js';
+import { handleWyrButton } from '../commands/fun/wouldyourather.js';
 
 async function replySafe(interaction, payload) {
   try {
@@ -21,6 +22,7 @@ const BUTTON_HANDLERS = new Map([
   ['marry', handleMarriageButton],
   ['divorce', handleDivorceButton],
   ['fix', handleFixButton],
+  ['wyr', handleWyrButton],
 ]);
 
 export default {

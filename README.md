@@ -22,7 +22,7 @@ A lovable, Nekotina-style Discord bot packed with love & reaction commands, marr
 - `/lovestats` — most given/received actions, favorite person, biggest fan
 
 ### 🎲 Fun & games
-`/8ball` `/coinflip` `/dice` `/rate` `/wouldyourather` `/choose`
+`/8ball` `/coinflip` `/dice` `/rate` `/wouldyourather` `/choose` — `/wouldyourather` posts a live A/B poll: anyone can vote with the buttons, and the embed shows the running tally with a 👑 on the leader. One vote per person (clicking again is politely refused), and polls expire after 24 hours.
 
 ### 🔗 Link fixer
 `/fix <link>` — paste a TikTok, X/Twitter, Instagram, Reddit, Threads, Bluesky or Pixiv link and get back a version that actually plays inline in Discord. If the embed doesn't work, a **Try another fixer** button cycles to a backup service. Before replying, the bot quietly pings each fixer service and skips any that are down, so a dead proxy (they go dark without warning) never gets handed to you.
