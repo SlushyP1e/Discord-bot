@@ -16,7 +16,10 @@ const PLATFORMS = [
   {
     name: 'Instagram',
     match: (h) => h === 'instagram.com' || h.endsWith('.instagram.com'),
-    hosts: ['ddinstagram.com', 'kkinstagram.com', 'instagramez.com'],
+    // zzinstagram (InstaEmbedRouter) is a self-healing router that fans out to
+    // several upstream fixers, so it stays up when individual ones die. d.zz is
+    // its media-only variant; vxinstagram is an independent SnapSave-backed fixer.
+    hosts: ['zzinstagram.com', 'd.zzinstagram.com', 'vxinstagram.com'],
   },
   {
     name: 'Reddit',

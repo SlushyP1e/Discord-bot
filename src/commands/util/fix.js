@@ -8,6 +8,7 @@ import {
 import { errorEmbed } from '../../utils/embeds.js';
 import { DM_AND_GUILD } from '../../utils/scope.js';
 import { buildFixedUrls, SUPPORTED_PLATFORMS } from '../../linkfix/linkFixer.js';
+import { pickWorkingUrls } from '../../linkfix/health.js';
 
 const SESSION_TTL_MS = 60 * 60_000; // 1 hour to keep cycling fixer services
 // messageId -> { urls, index, requesterId, expires }
@@ -47,9 +48,15 @@ export default {
       });
     }
 
-    const multi = fixed.urls.length > 1;
-    await interaction.reply({
-      content: fixed.urls[0],
+    // Give ourselves time to probe the fixer hosts (Discord's 3s limit).
+    await interaction.deferReply();
+
+    // Skip fixers that are down right now; keep the full list if all are down.
+    const urls = await pickWorkingUrls(fixed.urls);
+
+    const multi = urls.length > 1;
+    await interaction.editReply({
+      content: urls[0],
       components: multi ? [tryAnotherButton()] : [],
     });
 
@@ -57,7 +64,7 @@ export default {
       const reply = await interaction.fetchReply();
       pruneSessions();
       sessions.set(reply.id, {
-        urls: fixed.urls,
+        urls,
         index: 0,
         requesterId: interaction.user.id,
         expires: Date.now() + SESSION_TTL_MS,

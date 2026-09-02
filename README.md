@@ -25,7 +25,7 @@ A lovable, Nekotina-style Discord bot packed with love & reaction commands, marr
 `/8ball` `/coinflip` `/dice` `/rate` `/wouldyourather` `/choose`
 
 ### 🔗 Link fixer
-`/fix <link>` — paste a TikTok, X/Twitter, Instagram, Reddit, Threads, Bluesky or Pixiv link and get back a version that actually plays inline in Discord. If the embed doesn't work, a **Try another fixer** button cycles to a backup service.
+`/fix <link>` — paste a TikTok, X/Twitter, Instagram, Reddit, Threads, Bluesky or Pixiv link and get back a version that actually plays inline in Discord. If the embed doesn't work, a **Try another fixer** button cycles to a backup service. Before replying, the bot quietly pings each fixer service and skips any that are down, so a dead proxy (they go dark without warning) never gets handed to you.
 
 ### 🧠 AI chat
 `/ask <question>` — ask SlushyLove anything and get an actual answer, in her own voice: dry, quick and happy to snap back at you. Powered by **DeepSeek** by default (or any OpenAI-compatible provider).

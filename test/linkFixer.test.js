@@ -13,7 +13,7 @@ test('rewrites each platform to its primary fixer, keeping the path', () => {
   );
   assert.equal(
     buildFixedUrls('https://www.instagram.com/reel/AbC123/').urls[0],
-    'https://ddinstagram.com/reel/AbC123/',
+    'https://zzinstagram.com/reel/AbC123/',
   );
   assert.equal(
     buildFixedUrls('https://www.reddit.com/r/x/comments/abc/title/').urls[0],
