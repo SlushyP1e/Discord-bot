@@ -30,7 +30,7 @@ const QUESTIONS = [
 ];
 
 const POLL_TTL_MS = 24 * 60 * 60_000; // 24 hours, then the buttons expire
-// messageId -> { a, b, voters: Map<userId, 'a'|'b'>, expires }
+// messageId -> { a, b, creatorId, voters: Map<userId, 'a'|'b'>, expires }
 const polls = new Map();
 
 function prunePolls() {
@@ -48,6 +48,10 @@ function pollRow() {
       .setCustomId('wyr:b')
       .setLabel('🅱️')
       .setStyle(ButtonStyle.Primary),
+    new ButtonBuilder()
+      .setCustomId('wyr:results')
+      .setLabel('Results 🔎')
+      .setStyle(ButtonStyle.Secondary),
   );
 }
 
@@ -74,6 +78,22 @@ function pollEmbed(a, b, voters) {
   );
 }
 
+/**
+ * Formats who voted for what, for the poll creator's private results view.
+ * @param {string} a
+ * @param {string} b
+ * @param {Map<string, 'a'|'b'>} voters
+ */
+export function resultsBreakdown(a, b, voters) {
+  const groups = { a: [], b: [] };
+  for (const [userId, choice] of voters) groups[choice].push(userId);
+  const line = (label, option, ids) =>
+    ids.length
+      ? `${label} ${option} — ${ids.length} vote${ids.length === 1 ? '' : 's'}: ${ids.map((id) => `<@${id}>`).join(', ')}`
+      : `${label} ${option} — no votes yet`;
+  return `${line('🅰️', a, groups.a)}\n${line('🅱️', b, groups.b)}`;
+}
+
 export default {
   data: new SlashCommandBuilder()
     .setName('wouldyourather')
@@ -83,9 +103,9 @@ export default {
     const [a, b] = QUESTIONS[Math.floor(Math.random() * QUESTIONS.length)];
     await interaction.reply({ embeds: [pollEmbed(a, b, new Map())], components: [pollRow()] });
 
-    const reply = await interaction.fetchReply();
+const reply = await interaction.fetchReply();
     prunePolls();
-    polls.set(reply.id, { a, b, voters: new Map(), expires: Date.now() + POLL_TTL_MS });
+    polls.set(reply.id, { a, b, creatorId: interaction.user.id, voters: new Map(), expires: Date.now() + POLL_TTL_MS });
   },
 };
 
@@ -103,7 +123,23 @@ export async function handleWyrButton(interaction) {
     });
   }
 
-  const choice = interaction.customId.split(':')[1];
+const choice = interaction.customId.split(':')[1];
+
+  // The creator alone gets to peek at who voted for what — everyone else is
+  // told to buzz off (ephemerally, of course).
+  if (choice === 'results') {
+    if (interaction.user.id !== poll.creatorId) {
+      return interaction.reply({
+        embeds: [errorEmbed('Only the person who made this poll can peek at the results. 🤫')],
+        flags: MessageFlags.Ephemeral,
+      });
+    }
+    return interaction.reply({
+      embeds: [simpleEmbed(COLORS.fun, `🤔 **Who voted**\n\n${resultsBreakdown(poll.a, poll.b, poll.voters)}`)],
+      flags: MessageFlags.Ephemeral,
+    });
+  }
+
   const previous = poll.voters.get(interaction.user.id);
   if (previous) {
     return interaction.reply({
