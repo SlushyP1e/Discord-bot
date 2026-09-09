@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { tallyLine, resultsBreakdown } from '../src/commands/fun/wouldyourather.js';
+import { tallyLine, resultsBreakdown, parseWyrPair } from '../src/commands/fun/wouldyourather.js';
 
 test('leader gets the crown', () => {
   assert.equal(tallyLine(3, 7), '📊 **A:** 3  ·  **B:** 7 👑');
@@ -32,4 +32,20 @@ test('results breakdown shows no votes for an empty side', () => {
   const out = resultsBreakdown('cats', 'dogs', new Map());
   assert.ok(out.includes('🅰️ cats — no votes yet'));
   assert.ok(out.includes('🅱️ dogs — no votes yet'));
+});
+
+test('parseWyrPair extracts a clean pair', () => {
+  assert.deepEqual(parseWyrPair('have a third arm | be able to talk to ghosts'), [
+    'have a third arm',
+    'be able to talk to ghosts',
+  ]);
+  assert.deepEqual(parseWyrPair('"fight one duck" | "pet a hundred cats"'), ['fight one duck', 'pet a hundred cats']);
+});
+
+test('parseWyrPair rejects malformed replies', () => {
+  assert.equal(parseWyrPair(null), null);
+  assert.equal(parseWyrPair('only one option'), null);
+  assert.equal(parseWyrPair('a | b | c'), null);
+  assert.equal(parseWyrPair('a |'), null);
+  assert.equal(parseWyrPair('a || b'), null);
 });

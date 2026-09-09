@@ -7,6 +7,68 @@ import {
   SlashCommandBuilder,
 } from 'discord.js';
 import { COLORS, simpleEmbed, errorEmbed } from '../../utils/embeds.js';
+import { checkAiAccess } from '../../ai/settings.js';
+import { isOwner } from '../../utils/owner.js';
+
+// Tells the AI exactly what shape to hand back so we can parse it, no matter
+// how playful it gets with the wording.
+const WYR_PROMPT = `You are generating one fresh "Would you rather?" question for a Discord server.
+Pick two fun, distinct, roughly-balanced options that people will enjoy arguing about.
+Keep each option under ~12 words. Do not repeat common cliches.
+Reply with ONLY the two options on a single line, separated by " | " — nothing else, no numbering, no extra text.`;
+
+/**
+ * Splits the AI's reply into the two options. Returns null when the reply isn't
+ * shaped like a valid pair, so the caller can fall back to the static list.
+ * @param {string} text
+ * @returns {[string, string] | null}
+ */
+export function parseWyrPair(text) {
+  if (typeof text !== 'string') return null;
+  const parts = text.split('|');
+  if (parts.length !== 2) return null;
+  const clean = parts.map((s) =>
+    s
+      .trim()
+      .replace(/^["'’‘]+/, '')
+      .replace(/["'’‘]+$/, '')
+      .trim(),
+  );
+  if (!clean[0] || !clean[1]) return null;
+  if (clean[0].length > 80 || clean[1].length > 80) return null;
+  return clean;
+}
+
+/**
+ * Asks the bot's AI for a brand-new pair of options. Returns null when the AI
+ * isn't available (no key), the user has no access, or the reply can't be
+ * parsed — the caller then falls back to the local list.
+ * @param {import('discord.js').CommandInteraction} interaction
+ * @param {object} ctx
+ * @returns {Promise<[string, string] | null>}
+ */
+async function aiPair(interaction, ctx) {
+  if (!ctx.aiSettings?.hasApiKey()) return null;
+  const access = checkAiAccess({
+    isOwner: isOwner(ctx, interaction.user.id),
+    userId: interaction.user.id,
+    guildId: interaction.guildId,
+    settings: ctx.aiSettings,
+  });
+  if (!access.ok) return null;
+
+  try {
+    const { text } = await ctx.aiClient.chat([
+      { role: 'system', content: WYR_PROMPT },
+      { role: 'user', content: 'Give me a would-you-rather question.' },
+    ]);
+    return parseWyrPair(text);
+  } catch {
+    // Any failure — timeout, rate limit, parse miss — just means we use a
+    // question from the local list. No need to bother the user about it.
+    return null;
+  }
+}
 
 const QUESTIONS = [
   ['be able to talk to animals', 'speak every human language'],
@@ -402,8 +464,10 @@ export default {
     .setName('wouldyourather')
     .setDescription('Get a "would you rather" question 🤔')
     .setContexts(InteractionContextType.Guild, InteractionContextType.BotDM),
-  async execute(interaction) {
-    const [a, b] = QUESTIONS[Math.floor(Math.random() * QUESTIONS.length)];
+  async execute(interaction, ctx) {
+    // Prefer a freshly-generated question from the AI; fall back to the local
+    // list when the AI is off, gated, or had a hiccup.
+    const [a, b] = (await aiPair(interaction, ctx)) ?? QUESTIONS[Math.floor(Math.random() * QUESTIONS.length)];
     await interaction.reply({ embeds: [pollEmbed(a, b, new Map())], components: [pollRow()] });
 
 const reply = await interaction.fetchReply();
