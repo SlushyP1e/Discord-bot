@@ -8,10 +8,7 @@ import { NoApiKeyError, AIRequestError } from '../../ai/client.js';
 import { formatUsage } from '../../ai/usage.js';
 import { buildUserContent, historyText, isSupportedImage } from '../../ai/vision.js';
 import { isOwner } from '../../utils/owner.js';
-
-// AI calls cost the owner money, so /ask gets a longer leash than the 3s
-// global command cooldown.
-const ASK_COOLDOWN_MS = 8000;
+import { ASK_COOLDOWN_MS } from '../../ai/cooldown.js';
 
 // How much of the question is echoed back in the footer.
 const QUESTION_PREVIEW = 180;
@@ -144,11 +141,6 @@ export default {
       return interaction.editReply({ embeds: [errorEmbed(text)] });
     }
 
-    // Only remember exchanges that actually completed. The image itself is not
-    // kept — see src/ai/vision.js for why.
-    ctx.conversations.push(channelId, userId, 'user', historyText(question, images.length));
-    ctx.conversations.push(channelId, userId, 'assistant', answer);
-
     // Embeds can't ping anyone whatever the model writes, and markdown doesn't
     // render in the author line or footer, so neither needs escaping.
     const chunks = splitText(answer);
@@ -171,5 +163,10 @@ export default {
         ...(ephemeral ? { flags: MessageFlags.Ephemeral } : {}),
       });
     }
+
+    // Only remember exchanges that actually reached Discord. The image itself is
+    // not kept — see src/ai/vision.js for why.
+    ctx.conversations.push(channelId, userId, 'user', historyText(question, images.length));
+    ctx.conversations.push(channelId, userId, 'assistant', answer);
   },
 };

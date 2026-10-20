@@ -10,6 +10,8 @@ import { isOwner } from '../../utils/owner.js';
 // Right-click a bot message → Apps → "Block this GIF". Owner-only: adds the
 // GIF's URL to the blocklist so the failover engine never serves it again.
 export default {
+  ownerOnly: true,
+  help: 'Block a GIF from one of my messages',
   data: new ContextMenuCommandBuilder()
     .setName('Block this GIF')
     .setType(ApplicationCommandType.Message)

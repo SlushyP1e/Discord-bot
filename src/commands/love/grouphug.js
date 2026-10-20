@@ -3,8 +3,8 @@ import { COLORS, loveEmbed, simpleEmbed } from '../../utils/embeds.js';
 import { DM_AND_GUILD, scopeId } from '../../utils/scope.js';
 
 const TYPES = {
-  hug: { emoji: '🫂', verb: 'pulls', into: 'a big group hug', noun: 'hug' },
-  cuddle: { emoji: '🥰', verb: 'gathers', into: 'a giant cuddle pile', noun: 'cuddle' },
+  hug: { emoji: '🫂', verb: 'pulls', into: 'a big group hug', noun: 'hug', past: 'hugged' },
+  cuddle: { emoji: '🥰', verb: 'gathers', into: 'a giant cuddle pile', noun: 'cuddle', past: 'cuddled' },
 };
 
 // "B", "B and C", "B, C and D"
@@ -59,7 +59,7 @@ export default {
     }
 
     const names = joinNames(targets.map((t) => `**${t.displayName}**`));
-    const footerParts = [`${targets.length} ${targets.length === 1 ? 'person' : 'people'} hugged 💞`];
+    const footerParts = [`${targets.length} ${targets.length === 1 ? 'person' : 'people'} ${type.past} 💞`];
     if (gif?.anime) footerParts.push(`Anime: ${gif.anime}`);
 
     const embed = loveEmbed({

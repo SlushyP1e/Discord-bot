@@ -6,11 +6,8 @@ name: Publish container image
 
 on:
   push:
-    # This repo's default branch isn't called main, so both are listed —
-    # whichever exists is the one that fires. Add yours here if you rename it.
     branches:
       - main
-      - claude/slushylove-discord-bot-t411y3
     paths:
       - 'src/**'
       - 'package.json'
@@ -24,7 +21,27 @@ permissions:
   packages: write
 
 jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm test
+
   publish:
+    needs: check
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

@@ -19,8 +19,10 @@ test('health endpoint reports readiness and 404s other paths', async () => {
     const port = await listen(server);
     const base = `http://127.0.0.1:${port}`;
 
-    const before = await (await fetch(`${base}/healthz`)).json();
-    assert.equal(before.ok, true);
+    const beforeResponse = await fetch(`${base}/healthz`);
+    assert.equal(beforeResponse.status, 503);
+    const before = await beforeResponse.json();
+    assert.equal(before.ok, false);
     assert.equal(before.ready, false);
     assert.equal(typeof before.uptimeSec, 'number');
 

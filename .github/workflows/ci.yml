@@ -1,13 +1,9 @@
-# Runs the test suite (and lint) on every push and PR, on both supported Node
-# lines. Kept separate from publish-image.yml: a broken build should fail here
-# before it ever gets packaged.
 name: CI
 
 on:
   push:
     branches:
       - main
-      - claude/slushylove-discord-bot-t411y3
   pull_request:
   workflow_dispatch:
 
@@ -20,7 +16,6 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # package.json engines says >=20; the Docker image ships Node 22.
         node: ['20', '22']
     steps:
       - uses: actions/checkout@v4

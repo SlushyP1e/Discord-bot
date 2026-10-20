@@ -9,9 +9,11 @@ function bool(value) {
   return /^(1|true|yes|on)$/i.test((value ?? '').trim().replace(/^["']|["']$/g, ''));
 }
 
-/** Read a numeric env var, falling back when it's unset or not a number. */
+/** Read a numeric env var, falling back when it's unset, blank, or not a number. */
 function num(value, fallback) {
-  const n = Number(value);
+  const trimmed = (value ?? '').trim();
+  if (!trimmed) return fallback;
+  const n = Number(trimmed);
   return Number.isFinite(n) ? n : fallback;
 }
 

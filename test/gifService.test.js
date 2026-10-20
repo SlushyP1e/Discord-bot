@@ -216,6 +216,8 @@ test('headValidate accepts live images and rejects dead/non-image links', async 
   assert.equal(await headValidate('x', { fetchFn: async () => res(200, 'image/gif') }), true);
   assert.equal(await headValidate('x', { fetchFn: async () => res(404, 'text/html') }), false);
   assert.equal(await headValidate('x', { fetchFn: async () => res(405, null) }), true); // HEAD unsupported
+  assert.equal(await headValidate('x', { fetchFn: async () => res(403, 'text/html') }), true); // hotlink protection
+  assert.equal(await headValidate('x', { fetchFn: async () => res(429, 'text/html') }), true); // rate limited
   assert.equal(await headValidate('x', { fetchFn: async () => res(200, 'text/html') }), false);
   assert.equal(await headValidate('x', { fetchFn: async () => { throw new Error('boom'); } }), false);
 });

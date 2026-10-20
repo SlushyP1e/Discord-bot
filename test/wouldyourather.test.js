@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { tallyLine, resultsBreakdown, parseWyrPair } from '../src/commands/fun/wouldyourather.js';
+import { QUESTIONS } from '../src/commands/fun/wyrQuestions.js';
 
 test('leader gets the crown', () => {
   assert.equal(tallyLine(3, 7), '📊 **A:** 3  ·  **B:** 7 👑');
@@ -48,4 +49,15 @@ test('parseWyrPair rejects malformed replies', () => {
   assert.equal(parseWyrPair('a | b | c'), null);
   assert.equal(parseWyrPair('a |'), null);
   assert.equal(parseWyrPair('a || b'), null);
+});
+
+test('the local question list is varied and free of duplicate pairs', () => {
+  assert.ok(QUESTIONS.length >= 40);
+  const pairs = QUESTIONS.map(([a, b]) => `${a} | ${b}`);
+  assert.equal(new Set(pairs).size, pairs.length);
+  for (const pair of QUESTIONS) {
+    assert.equal(pair.length, 2);
+    assert.ok(pair[0].trim());
+    assert.ok(pair[1].trim());
+  }
 });

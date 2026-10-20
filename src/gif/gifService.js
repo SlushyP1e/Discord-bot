@@ -6,12 +6,6 @@ import nekosLife from './providers/nekosLife.js';
 
 export const defaultProviders = [nekosBest, waifuPics, otakuGifs, purrbot, nekosLife];
 
-/**
- * Confirms a GIF URL actually points to a live image, so we never post a dead
- * link (which Discord renders as a blank embed). Errs on the side of "usable":
- * if HEAD isn't supported (405/501) or gives no content-type, we allow it.
- * @returns {Promise<boolean>}
- */
 /** Returns a shuffled copy of an array (Fisher–Yates). */
 function shuffle(arr) {
   const out = [...arr];
@@ -22,10 +16,17 @@ function shuffle(arr) {
   return out;
 }
 
+/**
+ * Confirms a GIF URL actually points to a live image, so we never post a dead
+ * link (which Discord renders as a blank embed). Errs on the side of "usable":
+ * if HEAD isn't supported or is blocked (403/405/429/501) or gives no
+ * content-type, we allow it.
+ * @returns {Promise<boolean>}
+ */
 export async function headValidate(url, { fetchFn = globalThis.fetch, timeoutMs = 4000 } = {}) {
   try {
     const res = await fetchFn(url, { method: 'HEAD', signal: AbortSignal.timeout(timeoutMs) });
-    if (res.status === 405 || res.status === 501) return true; // HEAD not allowed — can't disprove
+    if ([403, 405, 429, 501].includes(res.status)) return true;
     if (!res.ok) return false;
     const type = res.headers?.get?.('content-type') ?? '';
     return type === '' || type.startsWith('image');

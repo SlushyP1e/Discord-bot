@@ -82,7 +82,14 @@ export async function handleMarriageButton(interaction, ctx) {
   }
 
   const { marriages } = ctx.db;
-  const proposer = await interaction.client.users.fetch(proposerId);
+  const proposer = await interaction.client.users.fetch(proposerId).catch(() => null);
+  if (!proposer) {
+    return interaction.update({
+      content: '',
+      embeds: [errorEmbed('That person\'s account is gone — this proposal can\'t be completed. 💨')],
+      components: [],
+    });
+  }
 
   if (choice === 'decline') {
     const embed = new EmbedBuilder()

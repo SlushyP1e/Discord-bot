@@ -161,7 +161,13 @@ export async function handleLoveBack(interaction, ctx) {
     });
   }
 
-  const originalUser = await interaction.client.users.fetch(originalUserId);
+  const originalUser = await interaction.client.users.fetch(originalUserId).catch(() => null);
+  if (!originalUser) {
+    return interaction.followUp({
+      embeds: [errorEmbed('I could not find that person anymore — their account may be gone. 💨')],
+      flags: MessageFlags.Ephemeral,
+    });
+  }
   const embed = await buildActionEmbed(ctx, opts, scopeId(interaction), interaction.user, originalUser);
   await interaction.followUp({ embeds: [embed] });
 }

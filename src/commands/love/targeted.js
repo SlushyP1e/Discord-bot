@@ -8,19 +8,19 @@ const ACTIONS = [
     name: 'hug', description: 'Give someone a warm hug 🤗', category: 'hug',
     emoji: '🤗', verb: 'hugs', noun: 'hug', backLabel: 'Hug back!',
     self: 'You hug yourself tight... self-love matters too! 💖',
-    bot: 'A hug?! For me?! *hugs back tightly* 🥺💞',
+    bot: 'A hug?! For me?! Come here, you. 🥺💞',
   },
   {
     name: 'kiss', description: 'Kiss someone 💋', category: 'kiss',
     emoji: '💋', verb: 'kisses', noun: 'kiss', backLabel: 'Kiss back!',
     self: 'Mwah! You blow yourself a kiss in the mirror. Confidence! 😘',
-    bot: 'O-oh! 😳 *blushes in robot* My circuits are overheating!',
+    bot: 'O-oh! 😳 My circuits are overheating!',
   },
   {
     name: 'cuddle', description: 'Cuddle up with someone 🫂', category: 'cuddle',
     emoji: '🫂', verb: 'cuddles with', noun: 'cuddle', backLabel: 'Cuddle back!',
     self: 'You wrap yourself in a blanket burrito. Cozy! 🌯',
-    bot: '*snuggles into your arms* Beep boop... this is nice 🥺',
+    bot: 'Beep boop... this is nice 🥺',
   },
   {
     name: 'lick', description: 'Lick someone... okay then 👅', category: 'lick',
@@ -32,7 +32,7 @@ const ACTIONS = [
     name: 'pat', description: 'Give someone headpats 🫳', category: 'pat',
     emoji: '🥰', verb: 'pats', noun: 'headpat', backLabel: 'Pat back!',
     self: 'You pat your own head. There, there. 🥺',
-    bot: '*happy robot noises* Right on the antenna! 🤖✨',
+    bot: 'Right on the antenna! 🤖✨',
   },
   {
     name: 'slap', description: 'Slap someone into next week 👋', category: 'slap',
@@ -62,19 +62,19 @@ const ACTIONS = [
     name: 'feed', description: 'Feed someone a tasty treat 🍰', category: 'feed',
     emoji: '🍰', verb: 'feeds', noun: 'treat', backLabel: 'Feed back!',
     self: 'You treat yourself to a snack. Bon appétit! 🍪',
-    bot: "Yum!! *munches* Best data I've eaten all day! 😋",
+    bot: "Yum!! Best data I've eaten all day! 😋",
   },
   {
     name: 'highfive', description: 'High-five someone 🙌', category: 'highfive',
     emoji: '🙌', verb: 'high-fives', noun: 'high-five', backLabel: 'High-five back!',
     self: "You high-five yourself. That's just clapping. 👏",
-    bot: '*SLAP* ✋🤖 Nice one!',
+    bot: 'Nice one! ✋🤖',
   },
   {
     name: 'wave', description: 'Wave at someone 👋', category: 'wave',
     emoji: '👋', verb: 'waves at', noun: 'wave', backLabel: 'Wave back!',
     self: 'You wave at your reflection. It waves back!',
-    bot: 'Hii!! 👋🤖 *waves enthusiastically*',
+    bot: 'Hii!! 👋🤖',
   },
   {
     name: 'handhold', description: 'Hold hands with someone 🤝', category: 'handhold',
@@ -98,7 +98,7 @@ const ACTIONS = [
     name: 'yeet', description: 'Yeet someone into the stratosphere 🚀', category: 'yeet',
     emoji: '🚀', verb: 'yeets', noun: 'yeet', backLabel: 'Yeet back!',
     self: 'You yeet yourself into the void. Goodbye! 🌌',
-    bot: 'AAAAAAA— *crashes into the wall* 🤖💥',
+    bot: 'AAAAAAA— 🤖💥',
   },
   {
     name: 'kick', description: 'Kick someone (in minecraft) 🦵', category: 'kick',
@@ -122,19 +122,19 @@ const ACTIONS = [
     name: 'boop', description: 'Boop someone on the nose 👃', category: 'boop',
     emoji: '👃', verb: 'boops', noun: 'boop', backLabel: 'Boop back!',
     self: 'You boop your own nose. Boop! 👃',
-    bot: '*boop received* System tickled successfully! 🤖✨',
+    bot: 'System tickled successfully! 🤖✨',
   },
   {
     name: 'airkiss', description: 'Blow someone a kiss 😗💨', category: 'airkiss',
     emoji: '😗', verb: 'blows a kiss to', noun: 'air kiss', backLabel: 'Kiss back!',
     self: 'You blow a kiss to your reflection. Lookin\' good! 😗',
-    bot: '*catches it* Aww, saved that one forever! 💾💞',
+    bot: 'Aww, saved that one forever! 💾💞',
   },
   {
     name: 'nuzzle', description: 'Nuzzle up to someone 🥰', category: 'nuzzle',
     emoji: '🥰', verb: 'nuzzles', noun: 'nuzzle', backLabel: 'Nuzzle back!',
     self: 'You nuzzle into your own shoulder. Comfy!',
-    bot: '*nuzzles back* Warning: cuteness overload detected! 🤖💕',
+    bot: 'Warning: cuteness overload detected! 🤖💕',
   },
   {
     name: 'pinch', description: 'Pinch someone\'s cheek 🤏', category: 'pinch',
@@ -152,7 +152,7 @@ const ACTIONS = [
     name: 'handshake', description: 'Shake someone\'s hand 🤝', category: 'handshake',
     emoji: '🤝', verb: 'shakes hands with', noun: 'handshake', backLabel: 'Shake back!',
     self: 'You shake your own hand. Deal with yourself: sealed.',
-    bot: '*firm robotic handshake* A pleasure doing business! 🤖🤝',
+    bot: 'A pleasure doing business! 🤖🤝',
   },
   {
     name: 'baka', description: 'Call someone a baka 😤', category: 'baka',
@@ -164,7 +164,7 @@ const ACTIONS = [
     name: 'shoot', description: 'Finger-guns at someone 🔫', category: 'shoot',
     emoji: '🔫', verb: 'finger-guns at', noun: 'finger-gun', backLabel: 'Shoot back!',
     self: 'You finger-gun at the mirror. Ayyy 😎🔫',
-    bot: 'Pew pew! *pretends to be hit* You got me! 🤖💥',
+    bot: 'Pew pew! You got me! 🤖💥',
   },
 ];
 

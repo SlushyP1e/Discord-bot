@@ -6,6 +6,7 @@ import { requireOwner } from '../../utils/owner.js';
 // via the "Block this GIF" right-click action; this handles anime-wide blocks
 // and viewing the list.
 export default {
+  ownerOnly: true,
   data: new SlashCommandBuilder()
     .setName('blocklist')
     .setDescription('Owner: manage the GIF blocklist')

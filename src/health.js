@@ -14,11 +14,12 @@ export function startHealthServer({ port, client } = {}) {
       res.end(JSON.stringify({ ok: false, error: 'not found' }));
       return;
     }
-    res.writeHead(200, { 'content-type': 'application/json' });
+    const ready = Boolean(client?.user);
+    res.writeHead(ready ? 200 : 503, { 'content-type': 'application/json' });
     res.end(
       JSON.stringify({
-        ok: true,
-        ready: Boolean(client?.user),
+        ok: ready,
+        ready,
         uptimeSec: Math.floor((Date.now() - startedAt) / 1000),
       }),
     );

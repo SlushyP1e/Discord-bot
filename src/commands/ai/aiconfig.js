@@ -29,7 +29,7 @@ export default {
             .setRequired(false),
         )
         .addStringOption((o) =>
-          o.setName('model').setDescription('Model name, e.g. deepseek-chat'),
+          o.setName('model').setDescription('Model name, e.g. deepseek-v4-flash'),
         )
         .addStringOption((o) =>
           o.setName('base_url').setDescription('OpenAI-compatible base URL, e.g. https://api.deepseek.com'),

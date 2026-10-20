@@ -1,5 +1,6 @@
 import {
   ActionRowBuilder,
+  ApplicationCommandType,
   EmbedBuilder,
   InteractionContextType,
   SlashCommandBuilder,
@@ -63,7 +64,11 @@ export async function handleHelpMenu(interaction) {
   const meta = CATEGORY_META[category];
   const commands = [...interaction.client.commands.values()]
     .filter((c) => c.category === category && !c.ownerOnly)
-    .map((c) => `**/${c.data.name}** — ${c.data.description}`)
+    .map((c) => {
+      const isMenu = c.data.type === ApplicationCommandType.Message || c.data.type === ApplicationCommandType.User;
+      const label = isMenu ? `**${c.data.name}** (message action)` : `**/${c.data.name}**`;
+      return `${label} — ${c.help ?? c.data.description ?? 'No description'}`;
+    })
     .sort();
 
   const embed = new EmbedBuilder()

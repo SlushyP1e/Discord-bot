@@ -184,7 +184,7 @@ docker compose up -d --build
 docker compose logs -f   # look for "Logged in as SlushyLove#..."
 ```
 
-The image ships with a built-in **healthcheck**: the container serves `GET /healthz` on port 3000 internally and Docker marks it unhealthy if that stops answering — so NAS dashboards show real status, and `docker ps` tells a hung bot from a live one at a glance.
+The image ships with a built-in **healthcheck**: the container serves `GET /healthz` on port 3000 internally. It returns `503` until the Discord gateway is connected, then `200`, so restarts wait for a genuinely ready bot instead of just a running process.
 
 ### 2b. Run on ZimaOS (or CasaOS)
 
@@ -249,7 +249,7 @@ npm start
 npm test
 ```
 
-Covers the failover engine (fallback order, circuit breaker, cache-of-last-resort, never-throws), the database (counters, marriage lifecycle) and the AI layer (key encryption, server allow-list, guardrail ordering, reply splitting).
+Covers the failover engine (fallback order, circuit breaker, cache-of-last-resort, never-throws), the database (counters, marriage lifecycle), the AI layer (key encryption, server allow-list, guardrail ordering, reply splitting) and the would-you-rather question list.
 
 ## 🧩 Adding your own love command
 

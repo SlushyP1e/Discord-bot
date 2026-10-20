@@ -32,12 +32,6 @@ export class AIRequestError extends Error {
 }
 
 /**
- * Turn a base URL into a full completions endpoint.
- *   https://api.deepseek.com          → https://api.deepseek.com/chat/completions
- *   https://api.openai.com/v1/        → https://api.openai.com/v1/chat/completions
- *   https://x.dev/v1/chat/completions → unchanged (already an endpoint)
- */
-/**
  * Dig the human-readable message out of a provider's error body.
  * They mostly use `{"error": {"message": "..."}}`, but not all of them, so the
  * raw text is the fallback.
@@ -54,6 +48,12 @@ export function extractProviderMessage(body) {
   return String(body).trim().slice(0, 400) || null;
 }
 
+/**
+ * Turn a base URL into a full completions endpoint.
+ *   https://api.deepseek.com          → https://api.deepseek.com/chat/completions
+ *   https://api.openai.com/v1/        → https://api.openai.com/v1/chat/completions
+ *   https://x.dev/v1/chat/completions → unchanged (already an endpoint)
+ */
 export function buildEndpoint(baseUrl) {
   const trimmed = (baseUrl || '').trim().replace(/\/+$/, '');
   if (/\/chat\/completions$/.test(trimmed)) return trimmed;
