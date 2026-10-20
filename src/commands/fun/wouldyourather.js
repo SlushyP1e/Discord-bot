@@ -11,7 +11,7 @@ import { checkAiAccess } from '../../ai/settings.js';
 import { isOwner } from '../../utils/owner.js';
 import { ASK_COOLDOWN_MS } from '../../ai/cooldown.js';
 import { checkCooldown, resetCooldown } from '../../utils/cooldowns.js';
-import { QUESTIONS } from './wyrQuestions.js';
+import { QUESTIONS } from './_wyrQuestions.js';
 
 // Tells the AI exactly what shape to hand back so we can parse it, no matter
 // how playful it gets with the wording.

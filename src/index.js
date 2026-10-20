@@ -86,6 +86,10 @@ for (const category of readdirSync(commandsRoot)) {
   for (const file of readdirSync(dir)) {
     if (!file.endsWith('.js') || file.startsWith('_')) continue;
     const mod = (await import(pathToFileURL(path.join(dir, file)))).default;
+    if (!mod) {
+      console.warn(`⚠️  Skipping ${category}/${file}: no default export`);
+      continue;
+    }
     for (const command of Array.isArray(mod) ? mod : [mod]) {
       client.commands.set(command.data.name, { ...command, category });
     }

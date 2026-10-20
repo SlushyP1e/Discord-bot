@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { tallyLine, resultsBreakdown, parseWyrPair } from '../src/commands/fun/wouldyourather.js';
-import { QUESTIONS } from '../src/commands/fun/wyrQuestions.js';
+import { QUESTIONS } from '../src/commands/fun/_wyrQuestions.js';
 
 test('leader gets the crown', () => {
   assert.equal(tallyLine(3, 7), '📊 **A:** 3  ·  **B:** 7 👑');
